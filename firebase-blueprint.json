@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "project": {
+      "title": "BudgetProject",
+      "description": "A budget project item under the subsidy allocation B.E. 2570 for Faculty of Social Sciences",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "orderNumber": { "type": "string", "description": "Order number e.g. 1, 2.1, 7.1" },
+        "projectType": { "type": "string", "description": "Type e.g. โครงการประจำ, งานตามยุทธฯ มหาวิทยาลัย" },
+        "department": { "type": "string", "description": "Responsible department/branch in Faculty of Social Sciences" },
+        "fund": { "type": "string", "description": "Fund source e.g. กองทุนเพื่อการศึกษา, กองทุนกิจการนิสิต, กองทุนวิจัย" },
+        "projectGroup": { "type": "string", "description": "Project group category" },
+        "projectCode": { "type": "string", "description": "Budget code e.g. 040101081003" },
+        "projectName": { "type": "string", "description": "Project title level 2" },
+        "subProjectName": { "type": "string", "description": "Level 3 faculty-controlled project title" },
+        "initialBudget": { "type": "number", "description": "Initial allocated budget in THB" },
+        "transferredOut": { "type": "number", "description": "Total transferred out to other projects" },
+        "transferredIn": { "type": "number", "description": "Total transferred in from other projects" },
+        "remainingBudget": { "type": "number", "description": "Allocated budget after transfers" },
+        "totalRequested": { "type": "number", "description": "Total requested disbursement amount" },
+        "remainingRequested": { "type": "number", "description": "Remaining budget after requests" },
+        "totalActualSpent": { "type": "number", "description": "Actual spent amount" },
+        "remainingActual": { "type": "number", "description": "Actual remaining budget" },
+        "transferCount": { "type": "number", "description": "Number of times transfers occurred" },
+        "status": { "type": "string", "description": "Status: planned, in_progress, completed, closed" },
+        "quarter": { "type": "string", "description": "Target quarter: Q1, Q2, Q3, Q4" },
+        "updatedAt": { "type": "string", "description": "Last updated timestamp" }
+      },
+      "required": ["id", "projectName", "department", "fund", "initialBudget", "remainingBudget"]
+    },
+    "projectSummary": {
+      "title": "ProjectSummary",
+      "description": "Project completion summary, approved documents, completion documents, and KPI outcomes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique summary ID" },
+        "projectId": { "type": "string", "description": "Linked budget project ID" },
+        "projectTitle": { "type": "string", "description": "Project name" },
+        "department": { "type": "string", "description": "Department or branch" },
+        "responsiblePerson": { "type": "string", "description": "Name of responsible officer" },
+        "responsibleEmail": { "type": "string", "description": "Email of responsible officer for ownership enforcement" },
+        "objectives": { "type": "string", "description": "Project objectives" },
+        "targetGroup": { "type": "string", "description": "Target group" },
+        "attendeeCount": { "type": "number", "description": "Number of actual participants" },
+        "startDate": { "type": "string", "description": "Start date of project" },
+        "endDate": { "type": "string", "description": "End date of project" },
+        "location": { "type": "string", "description": "Event venue or online platform" },
+        "results": { "type": "string", "description": "Outcomes and KPI achievements" },
+        "allocatedBudget": { "type": "number", "description": "Allocated budget" },
+        "actualSpent": { "type": "number", "description": "Total actual expenditure" },
+        "remainingReturned": { "type": "number", "description": "Remaining budget returned to faculty" },
+        "problemsAndObstacles": { "type": "string", "description": "Problems faced" },
+        "recommendations": { "type": "string", "description": "Future recommendations" },
+        "approvedDocs": { "type": "array", "description": "List of approved project documents" },
+        "completionDocs": { "type": "array", "description": "List of completed summary documents and photos" },
+        "status": { "type": "string", "description": "Status: draft, submitted, approved" },
+        "createdBy": { "type": "string", "description": "Creator user email" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Update timestamp" }
+      },
+      "required": ["id", "projectId", "projectTitle", "responsibleEmail", "allocatedBudget", "actualSpent"]
+    },
+    "disbursement": {
+      "title": "DisbursementRecord",
+      "description": "Record of budget disbursement or expense for a project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique disbursement ID" },
+        "projectId": { "type": "string", "description": "Referenced project ID" },
+        "round": { "type": "number", "description": "Request round 1 to 15" },
+        "date": { "type": "string", "description": "Operation date / period" },
+        "description": { "type": "string", "description": "Details of the expense/event" },
+        "requestedAmount": { "type": "number", "description": "Requested amount in THB" },
+        "actualSpent": { "type": "number", "description": "Actual spent amount in THB" },
+        "responsiblePerson": { "type": "string", "description": "Person responsible" },
+        "docRef": { "type": "string", "description": "Document reference or summary number" },
+        "status": { "type": "string", "description": "Status: pending, approved, paid, summarized" },
+        "attachmentUrl": { "type": "string", "description": "Attached approval or invoice document" },
+        "attachmentName": { "type": "string", "description": "Attached file name" },
+        "createdBy": { "type": "string", "description": "User email or UID who created this record" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["id", "projectId", "round", "requestedAmount"]
+    },
+    "transfer": {
+      "title": "BudgetTransfer",
+      "description": "Record of budget transfer between projects",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique transfer ID" },
+        "sourceProjectId": { "type": "string", "description": "Source project ID" },
+        "targetProjectId": { "type": "string", "description": "Target project ID" },
+        "sourceProjectName": { "type": "string", "description": "Source project name" },
+        "targetProjectName": { "type": "string", "description": "Target project name" },
+        "amount": { "type": "number", "description": "Transferred amount in THB" },
+        "reason": { "type": "string", "description": "Transfer justification/reason" },
+        "approvedBy": { "type": "string", "description": "Approving admin" },
+        "transferDate": { "type": "string", "description": "Date of transfer" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["id", "sourceProjectId", "targetProjectId", "amount", "reason"]
+    },
+    "member": {
+      "title": "AppMember",
+      "description": "Member profile with role-based access control",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Member ID (email or UID)" },
+        "email": { "type": "string", "description": "Member email" },
+        "displayName": { "type": "string", "description": "Full name" },
+        "department": { "type": "string", "description": "Assigned department/branch" },
+        "role": { "type": "string", "description": "Role: admin, finance_officer, department_head, project_staff, viewer" },
+        "canRecordExpense": { "type": "boolean", "description": "Permission to record disbursement" },
+        "canApprove": { "type": "boolean", "description": "Permission to approve projects/expenses" },
+        "canTransfer": { "type": "boolean", "description": "Permission to execute budget transfers" },
+        "canAttachDocs": { "type": "boolean", "description": "Permission to attach files" },
+        "status": { "type": "string", "description": "Status: active, inactive" }
+      },
+      "required": ["id", "email", "displayName", "role"]
+    },
+    "setting": {
+      "title": "SystemSetting",
+      "description": "System configuration such as max transfers allowed",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Setting ID" },
+        "maxTransfersAllowed": { "type": "number", "description": "Max transfers allowed per project" },
+        "fiscalYear": { "type": "string", "description": "Current fiscal year e.g. 2570" },
+        "facultyName": { "type": "string", "description": "Faculty name" },
+        "googleSheetsUrl": { "type": "string", "description": "Connected Google Sheets URL" },
+        "lastSyncedAt": { "type": "string", "description": "Timestamp of last sync" },
+        "transferLimitEnforced": { "type": "boolean", "description": "Whether transfer limit is enforced" }
+      },
+      "required": ["id"]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/project" },
+      "description": "Collection of budget projects in Fiscal Year 2570"
+    },
+    "/projectSummaries/{summaryId}": {
+      "schema": { "$ref": "#/entities/projectSummary" },
+      "description": "Collection of completed project summaries with approved and completion documents"
+    },
+    "/disbursements/{disbursementId}": {
+      "schema": { "$ref": "#/entities/disbursement" },
+      "description": "Disbursement records and actual expense tracking"
+    },
+    "/transfers/{transferId}": {
+      "schema": { "$ref": "#/entities/transfer" },
+      "description": "Budget transfer audit logs"
+    },
+    "/members/{memberId}": {
+      "schema": { "$ref": "#/entities/member" },
+      "description": "Authorized staff and admin permissions"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/setting" },
+      "description": "System configuration and constraints"
+    }
+  }
+}
