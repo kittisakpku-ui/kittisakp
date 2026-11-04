@@ -19,7 +19,8 @@ import {
   BudgetProject, 
   ProjectSummaryRecord, 
   AttachedDocument, 
-  AppMember 
+  AppMember,
+  FACULTY_DEPARTMENTS
 } from '../types/budget';
 
 interface ProjectSummaryModalProps {
@@ -332,13 +333,19 @@ export const ProjectSummaryModal: React.FC<ProjectSummaryModalProps> = ({
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   หน่วยงาน / ภาควิชา
                 </label>
-                <input
-                  type="text"
+                <select
                   disabled={!canEdit}
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 disabled:bg-slate-100"
-                />
+                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 disabled:bg-slate-100 bg-white cursor-pointer font-medium"
+                >
+                  {FACULTY_DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                  {department && !FACULTY_DEPARTMENTS.includes(department as any) && (
+                    <option value={department}>{department}</option>
+                  )}
+                </select>
               </div>
             </div>
 

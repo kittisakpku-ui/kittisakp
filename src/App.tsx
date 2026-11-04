@@ -14,6 +14,7 @@ import { ExecutiveReportModal } from './components/ExecutiveReportModal';
 import { ProjectSummaryView } from './components/ProjectSummaryView';
 import { ProjectSummaryModal } from './components/ProjectSummaryModal';
 import { ProjectSummaryPrintModal } from './components/ProjectSummaryPrintModal';
+import { AuthModal } from './components/AuthModal';
 import { StorageService } from './services/storageService';
 import { 
   BudgetProject, 
@@ -40,8 +41,10 @@ export default function App() {
   const [currentPeriod, setCurrentPeriod] = useState<TimePeriodFilter>('ALL');
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
 
-  // Active User (Defaults to kittisakpku@gmail.com Super Admin)
+  // Active User (Defaults to saved session or Super Admin kittisakpku@gmail.com)
   const [currentUser, setCurrentUser] = useState<AppMember>(() => {
+    const saved = StorageService.getActiveUser();
+    if (saved) return saved;
     const list = StorageService.loadMembers();
     return list.find(m => m.email === 'kittisakpku@gmail.com') || list[0];
   });
@@ -53,6 +56,10 @@ export default function App() {
   const [isConnectorOpen, setIsConnectorOpen] = useState(false);
   const [isAdminSettingsOpen, setIsAdminSettingsOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  
+  // Auth & Registration Modal
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
   // Project Summary Modals
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
@@ -148,10 +155,30 @@ export default function App() {
     showToast(`โอนงบประมาณ ฿${transferData.amount.toLocaleString()} บาท เรียบร้อยแล้ว`);
   };
 
-  // 3. User Management Handlers
+  // 3. User Management & Auth Handlers
   const handleSwitchUser = (member: AppMember) => {
     setCurrentUser(member);
-    showToast(`สลับผู้ใช้งานเป็น: ${member.displayName} (${member.role})`);
+    StorageService.saveActiveUser(member);
+    showToast(`สลับผู้ใช้งานเป็น: ${member.displayName} (${member.department})`);
+  };
+
+  const handleLoginUser = (member: AppMember) => {
+    setCurrentUser(member);
+    StorageService.saveActiveUser(member);
+    setIsAuthOpen(false);
+    showToast(`เข้าสู่ระบบสำเร็จ: ${member.displayName} (${member.department})`);
+  };
+
+  const handleRegisterUser = (newMember: AppMember) => {
+    setMembers(prev => {
+      const updated = [...prev, newMember];
+      StorageService.saveMembers(updated);
+      return updated;
+    });
+    setCurrentUser(newMember);
+    StorageService.saveActiveUser(newMember);
+    setIsAuthOpen(false);
+    showToast(`ยินดีต้อนรับ ${newMember.displayName} สมัครสมาชิกสำเร็จ`);
   };
 
   const handleAddMember = (newMemberData: Omit<AppMember, 'id' | 'createdAt'>) => {
@@ -343,6 +370,14 @@ export default function App() {
         onOpenSettings={() => setIsAdminSettingsOpen(true)}
         onOpenReport={() => setIsReportOpen(true)}
         onOpenNewSummary={handleOpenNewSummary}
+        onOpenAuth={() => {
+          setAuthMode('login');
+          setIsAuthOpen(true);
+        }}
+        onOpenRegister={() => {
+          setAuthMode('register');
+          setIsAuthOpen(true);
+        }}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         summaryCount={summaries.length}
@@ -458,6 +493,22 @@ export default function App() {
         onAddMember={handleAddMember}
         onUpdateMember={handleUpdateMember}
         onDeleteMember={handleDeleteMember}
+        onOpenRegister={() => {
+          setIsUserManagementOpen(false);
+          setAuthMode('register');
+          setIsAuthOpen(true);
+        }}
+      />
+
+      {/* iOS 26 Authentication & Self-Registration Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        currentUser={currentUser}
+        members={members}
+        onLogin={handleLoginUser}
+        onRegister={handleRegisterUser}
+        initialMode={authMode}
       />
 
       <GoogleSheetsConnectorModal

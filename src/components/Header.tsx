@@ -12,7 +12,9 @@ import {
   CheckCircle2,
   Calendar,
   FileCheck2,
-  LayoutDashboard
+  LayoutDashboard,
+  UserPlus,
+  LogIn
 } from 'lucide-react';
 import { TimePeriodFilter, AppMember } from '../types/budget';
 
@@ -28,6 +30,8 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onOpenReport: () => void;
   onOpenNewSummary: () => void;
+  onOpenAuth: () => void;
+  onOpenRegister: () => void;
   activeTab: 'dashboard' | 'summaries';
   onTabChange: (tab: 'dashboard' | 'summaries') => void;
   summaryCount: number;
@@ -47,6 +51,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenReport,
   onOpenNewSummary,
+  onOpenAuth,
+  onOpenRegister,
   activeTab,
   onTabChange,
   summaryCount,
@@ -102,18 +108,28 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">ซิงค์</span>
             </button>
 
-            {/* Current User Pill */}
+            {/* Register New User Button */}
             <button
-              onClick={onSwitchUser}
+              onClick={onOpenRegister}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-tr from-[#5856D6] to-[#007AFF] text-white text-xs font-semibold shadow-xs hover:opacity-90 active:scale-95 transition cursor-pointer"
+              title="สมัครสมาชิกผู้ใช้งานใหม่ กำหนด User / Password เองได้"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>สมัครสมาชิก</span>
+            </button>
+
+            {/* Current User Pill / Switch / Login */}
+            <button
+              onClick={onOpenAuth}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white text-slate-800 text-xs transition active:scale-95 cursor-pointer border border-black/[0.06] shadow-2xs backdrop-blur-xs"
-              title="คลิกเพื่อสลับผู้ใช้งาน / ตรวจสอบสิทธิ์"
+              title="คลิกเพื่อสลับบัญชีผู้ใช้ หรือเข้าสู่ระบบด้วยรหัสผ่าน"
             >
               <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#007AFF] to-[#5856D6] flex items-center justify-center text-white text-[10px] font-bold">
                 {currentUser.displayName.slice(0, 1)}
               </div>
               <div className="text-left leading-tight">
                 <div className="font-semibold text-xs text-slate-900">{currentUser.displayName}</div>
-                <div className="text-[10px] text-slate-400 capitalize">{currentUser.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : currentUser.role}</div>
+                <div className="text-[10px] text-slate-400 capitalize">{currentUser.department} • {currentUser.role === 'admin' ? 'Admin' : currentUser.role}</div>
               </div>
             </button>
           </div>

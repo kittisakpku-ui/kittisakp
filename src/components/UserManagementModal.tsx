@@ -13,7 +13,7 @@ import {
   KeyRound,
   ShieldAlert
 } from 'lucide-react';
-import { AppMember, UserRole } from '../types/budget';
+import { AppMember, UserRole, FACULTY_DEPARTMENTS } from '../types/budget';
 
 interface UserManagementModalProps {
   isOpen: boolean;
@@ -24,6 +24,7 @@ interface UserManagementModalProps {
   onAddMember: (member: Omit<AppMember, 'id' | 'createdAt'>) => void;
   onUpdateMember: (member: AppMember) => void;
   onDeleteMember: (id: string) => void;
+  onOpenRegister?: () => void;
 }
 
 export const UserManagementModal: React.FC<UserManagementModalProps> = ({
@@ -35,10 +36,13 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   onAddMember,
   onUpdateMember,
   onDeleteMember,
+  onOpenRegister,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [department, setDepartment] = useState('งานยุทธศาสตร์และบุคคล');
   const [role, setRole] = useState<UserRole>('project_staff');
   const [canRecordExpense, setCanRecordExpense] = useState(true);
@@ -65,7 +69,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
     onAddMember({
       displayName,
+      username: username.trim() || email.split('@')[0],
       email,
+      password: password.trim() || '123456',
       department,
       role,
       canRecordExpense,
@@ -78,7 +84,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
     // Reset
     setDisplayName('');
+    setUsername('');
     setEmail('');
+    setPassword('');
     setIsAdding(false);
   };
 
@@ -137,21 +145,32 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </div>
           </div>
 
-          {/* Add Member Toggle */}
+          {/* Add Member Toggle & Register Shortcut */}
           {!isAdding ? (
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 รายชื่อสมาชิกและสิทธิ์ในระบบ ({members.length} ท่าน)
               </h4>
-              {currentUser.role === 'admin' && (
-                <button
-                  onClick={() => setIsAdding(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>เพิ่มรายชื่อสมาชิก</span>
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {onOpenRegister && (
+                  <button
+                    onClick={() => { onClose(); onOpenRegister(); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition cursor-pointer"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>หน้าสมัครสมาชิกใหม่</span>
+                  </button>
+                )}
+                {currentUser.role === 'admin' && (
+                  <button
+                    onClick={() => setIsAdding(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>เพิ่มสมาชิกโดย Admin</span>
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             /* Add Member Form */
@@ -192,7 +211,22 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                    อีเมล (Google/NU Account) <span className="text-rose-500">*</span>
+                    ชื่อผู้ใช้งาน (Username)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น somchai (ค่าเริ่มต้นใช้อีเมล)"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    อีเมล (Email) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -200,6 +234,18 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     placeholder="name@nu.ac.th"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    รหัสผ่าน (Password)
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="กำหนดรหัสผ่านสำหรับผู้ใช้งาน"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full text-xs border border-slate-300 rounded-lg p-2 bg-white"
                   />
                 </div>
@@ -215,16 +261,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     onChange={(e) => setDepartment(e.target.value)}
                     className="w-full text-xs border border-slate-300 rounded-lg p-2 bg-white cursor-pointer"
                   >
-                    <option value="งานยุทธศาสตร์และบุคคล">งานยุทธศาสตร์และบุคคล</option>
-                    <option value="งานบริการการศึกษา">งานบริการการศึกษา</option>
-                    <option value="งานกิจการนิสิตฯ">งานกิจการนิสิตฯ</option>
-                    <option value="งานวิจัยและบริการวิชาการ">งานวิจัยและบริการวิชาการ</option>
-                    <option value="งานอำนวยการ">งานอำนวยการ</option>
-                    <option value="จิตวิทยา">จิตวิทยา</option>
-                    <option value="ประวัติศาสตร์">ประวัติศาสตร์</option>
-                    <option value="สังคมวิทยาฯ">สังคมวิทยาฯ</option>
-                    <option value="รัฐศาสตร์ฯ">รัฐศาสตร์ฯ</option>
-                    <option value="สถานฯ">สถานฯ</option>
+                    {FACULTY_DEPARTMENTS.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>

@@ -12,7 +12,9 @@ import {
   FileText,
   ChevronRight,
   TrendingUp,
-  Search
+  Search,
+  Coins,
+  Package
 } from 'lucide-react';
 import { BudgetProject } from '../types/budget';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
@@ -25,9 +27,12 @@ interface DepartmentViewProps {
 
 const DEPT_ICONS: Record<string, React.ReactNode> = {
   'งานยุทธศาสตร์และบุคคล': <Shield className="w-4 h-4 text-indigo-600" />,
+  'งานการเงิน': <Coins className="w-4 h-4 text-emerald-600" />,
+  'งานพัสดุ': <Package className="w-4 h-4 text-orange-600" />,
   'งานบริการการศึกษา': <GraduationCap className="w-4 h-4 text-blue-600" />,
-  'งานวิจัยและบริการวิชาการ': <BookOpen className="w-4 h-4 text-emerald-600" />,
-  'งานวิจัยฯ': <BookOpen className="w-4 h-4 text-emerald-600" />,
+  'งานวิจัยและบริการวิชาการ': <BookOpen className="w-4 h-4 text-teal-600" />,
+  'งานวิจัยฯ': <BookOpen className="w-4 h-4 text-teal-600" />,
+  'งานกิจการนิสิตและศิษย์เก่าสัมพันธ์': <Users className="w-4 h-4 text-pink-600" />,
   'งานกิจการนิสิตฯ': <Users className="w-4 h-4 text-pink-600" />,
   'งานพัฒนานิสิตฯ': <Users className="w-4 h-4 text-pink-600" />,
   'งานอำนวยการ': <Building className="w-4 h-4 text-amber-600" />,

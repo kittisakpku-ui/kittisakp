@@ -8,6 +8,7 @@ const LOCAL_STORAGE_KEY_TRANSFERS = 'socsci_budget_transfers_2570';
 const LOCAL_STORAGE_KEY_MEMBERS = 'socsci_budget_members_2570';
 const LOCAL_STORAGE_KEY_CONFIG = 'socsci_budget_config_2570';
 const LOCAL_STORAGE_KEY_SUMMARIES = 'socsci_project_summaries_2570';
+const LOCAL_STORAGE_KEY_ACTIVE_USER = 'socsci_budget_active_user_2570';
 
 export class StorageService {
   static loadProjects(): BudgetProject[] {
@@ -57,7 +58,27 @@ export class StorageService {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY_MEMBERS);
       if (stored) {
-        return JSON.parse(stored);
+        const list: AppMember[] = JSON.parse(stored);
+        let updated = false;
+
+        // Ensure super admin has password fssnu1932
+        const adminIndex = list.findIndex(m => m.email === 'kittisakpku@gmail.com');
+        if (adminIndex >= 0) {
+          if (list[adminIndex].password !== 'fssnu1932' || !list[adminIndex].username) {
+            list[adminIndex].password = 'fssnu1932';
+            list[adminIndex].username = 'admin';
+            updated = true;
+          }
+        } else {
+          // Re-insert super admin
+          list.unshift(INITIAL_MEMBERS[0]);
+          updated = true;
+        }
+
+        if (updated) {
+          localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(list));
+        }
+        return list;
       }
     } catch (err) {
       console.warn('Could not read members from localStorage', err);
@@ -71,6 +92,30 @@ export class StorageService {
       this.syncMembersToFirestore(members).catch(() => {});
     } catch (err) {
       console.error('Failed to save members to storage', err);
+    }
+  }
+
+  static getActiveUser(): AppMember | null {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_ACTIVE_USER);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn('Could not read active user', e);
+    }
+    return null;
+  }
+
+  static saveActiveUser(user: AppMember | null) {
+    try {
+      if (user) {
+        localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE_USER, JSON.stringify(user));
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_ACTIVE_USER);
+      }
+    } catch (e) {
+      console.warn('Could not save active user', e);
     }
   }
 

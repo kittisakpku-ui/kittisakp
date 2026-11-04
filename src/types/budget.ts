@@ -93,11 +93,30 @@ export interface BudgetTransferRecord {
 
 export type UserRole = 'admin' | 'finance_officer' | 'department_head' | 'project_staff' | 'executive';
 
+export const FACULTY_DEPARTMENTS = [
+  'งานอำนวยการ',
+  'งานการเงิน',
+  'งานยุทธศาสตร์และบุคคล',
+  'งานบริการการศึกษา',
+  'งานกิจการนิสิตและศิษย์เก่าสัมพันธ์',
+  'งานวิจัยและบริการวิชาการ',
+  'งานพัสดุ',
+  'จิตวิทยา',
+  'ประวัติศาสตร์',
+  'สังคมวิทยาฯ',
+  'รัฐศาสตร์ฯ',
+  'สถานฯ',
+] as const;
+
+export type FacultyDepartment = typeof FACULTY_DEPARTMENTS[number] | string;
+
 export interface AppMember {
   id: string;
+  username?: string;
   email: string;
+  password?: string;
   displayName: string;
-  department: string;
+  department: FacultyDepartment;
   role: UserRole;
   avatarUrl?: string;
   canRecordExpense: boolean;

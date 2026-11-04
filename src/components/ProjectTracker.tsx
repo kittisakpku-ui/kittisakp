@@ -3,7 +3,8 @@ import {
   BudgetProject, 
   TimePeriodFilter, 
   DisbursementRound, 
-  AppMember 
+  AppMember,
+  FACULTY_DEPARTMENTS
 } from '../types/budget';
 import { 
   Search, 
@@ -156,19 +157,12 @@ export const ProjectTracker: React.FC<ProjectTrackerProps> = ({
           <select
             value={selectedDept || ''}
             onChange={(e) => onSelectDept(e.target.value)}
-            className="text-xs bg-white/90 border border-black/[0.08] rounded-full px-3.5 py-2 text-slate-800 focus:ring-2 focus:ring-[#007AFF] shadow-2xs cursor-pointer"
+            className="text-xs bg-white/90 border border-black/[0.08] rounded-full px-3.5 py-2 text-slate-800 focus:ring-2 focus:ring-[#007AFF] shadow-2xs cursor-pointer font-medium"
           >
-            <option value="">ทุกหน่วยงาน / ทุกภาควิชา</option>
-            <option value="งานยุทธศาสตร์และบุคคล">งานยุทธศาสตร์และบุคคล</option>
-            <option value="งานบริการการศึกษา">งานบริการการศึกษา</option>
-            <option value="งานกิจการนิสิตฯ">งานกิจการนิสิตฯ</option>
-            <option value="งานวิจัยและบริการวิชาการ">งานวิจัยและบริการวิชาการ</option>
-            <option value="งานอำนวยการ">งานอำนวยการ</option>
-            <option value="จิตวิทยา">ภาควิชาจิตวิทยา</option>
-            <option value="ประวัติศาสตร์">ภาควิชาประวัติศาสตร์</option>
-            <option value="สังคมวิทยาฯ">ภาควิชาสังคมวิทยาฯ</option>
-            <option value="รัฐศาสตร์ฯ">ภาควิชารัฐศาสตร์ฯ</option>
-            <option value="สถานฯ">สถานประชาคมโลกศึกษา (สถานฯ)</option>
+            <option value="">ทุกหน่วยงาน / ทุกภาควิชา ({FACULTY_DEPARTMENTS.length} หน่วยงาน)</option>
+            {FACULTY_DEPARTMENTS.map((dept) => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
           </select>
 
           {/* Status Filter */}
