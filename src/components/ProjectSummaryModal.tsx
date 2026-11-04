@@ -221,27 +221,32 @@ export const ProjectSummaryModal: React.FC<ProjectSummaryModalProps> = ({
   const remainingReturned = Math.max(0, allocatedBudget - actualSpent);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-150">
-        {/* Modal Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-teal-700 via-indigo-700 to-indigo-800 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileCheck2 className="w-5 h-5 text-teal-200" />
-            <div>
-              <h3 className="text-base font-bold">
-                {summaryToEdit ? 'แก้ไขการสรุปโครงการ' : 'บันทึกการสรุปโครงการที่เสร็จสิ้น'}
-              </h3>
-              <p className="text-xs text-teal-100">
-                แนบเอกสารอนุมัติโครงการ และเอกสารสรุปโครงการฉบับสมบูรณ์
-              </p>
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div className="bg-white rounded-[28px] max-w-2xl w-full shadow-[0_24px_70px_rgba(0,0,0,0.25)] border border-white/60 overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-200">
+        {/* Modal Header (iOS 26 Style) */}
+        <div className="px-6 pt-3 pb-4 bg-gradient-to-r from-[#30B0C7] via-[#007AFF] to-[#5856D6] text-white">
+          <div className="w-10 h-1 bg-white/40 rounded-full mx-auto mb-3"></div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-[10px] bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                <FileCheck2 className="w-4 h-4 stroke-[2.2]" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold tracking-tight">
+                  {summaryToEdit ? 'แก้ไขการสรุปโครงการ' : 'บันทึกการสรุปโครงการที่เสร็จสิ้น'}
+                </h3>
+                <p className="text-[11px] text-white/80">
+                  แนบเอกสารอนุมัติโครงการ และเอกสารสรุปโครงการฉบับสมบูรณ์
+                </p>
+              </div>
             </div>
+            <button 
+              onClick={onClose}
+              className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition active:scale-95 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-white/10 text-white/80 hover:text-white transition cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Security & Access Banner */}

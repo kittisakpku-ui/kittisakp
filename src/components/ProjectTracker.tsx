@@ -93,52 +93,62 @@ export const ProjectTracker: React.FC<ProjectTrackerProps> = ({
         </span>
       );
     }
+    if (p.status === 'summarized' || p.totalActualSpent > 0) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#34C759]/15 text-[#248A3D] border border-[#34C759]/20">
+          <CheckCircle2 className="w-3 h-3 text-[#34C759]" />
+          สรุปโครงการแล้ว
+        </span>
+      );
+    }
     if (p.totalRequested > 0) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-          <Clock className="w-3 h-3 text-amber-600" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FF9500]/15 text-[#B26A00] border border-[#FF9500]/20">
+          <Clock className="w-3 h-3 text-[#FF9500]" />
           ขอใช้เงินแล้ว
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#8E8E93]/15 text-[#636366] border border-[#8E8E93]/20">
         รอการดำเนินการ
       </span>
     );
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden mb-6">
+    <div className="bg-white/80 backdrop-blur-xl rounded-[28px] border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] overflow-hidden mb-6 transition-all duration-200">
       {/* Table Header and Filters */}
-      <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/60">
+      <div className="p-5 border-b border-black/[0.05] bg-white/40 backdrop-blur-md">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-[9px] bg-gradient-to-tr from-[#007AFF] to-[#5856D6] flex items-center justify-center text-white shadow-xs">
+                <FileText className="w-4 h-4 stroke-[2.2]" />
+              </div>
               <span>ติดตามรายงานและคุมงบประมาณรายโครงการ (พ.ศ. 2570)</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] text-slate-500 mt-0.5">
               รายการคุมงบประมาณระดับคณะ แสดงประวัติการขอใช้จ่ายรอบที่ 1 ถึง 15 พร้อมเอกสารแนบ
             </p>
           </div>
 
-          <div className="text-xs text-slate-600 font-medium">
-            แสดง <strong className="text-indigo-700">{filteredProjects.length}</strong> จาก {projects.length} โครงการ
+          <div className="text-xs text-slate-500 font-medium">
+            แสดง <strong className="text-[#007AFF] font-bold">{filteredProjects.length}</strong> จาก {projects.length} โครงการ
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="mt-3.5 flex flex-wrap gap-2.5 items-center">
-          {/* Search Box */}
+        {/* Filter Bar (iOS 26 Search & Controls) */}
+        <div className="mt-4 flex flex-wrap gap-2.5 items-center">
+          {/* Cupertino Search Box */}
           <div className="relative flex-1 min-w-[220px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
             <input
               type="text"
               placeholder="ค้นหาชื่อโครงการ, รหัส, ผู้รับผิดชอบ หรือหน่วยงาน..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full text-xs pl-9 pr-4 py-2 rounded-full bg-[#767680]/10 border-0 focus:outline-none focus:ring-2 focus:ring-[#007AFF] text-slate-800 placeholder-slate-400 transition"
             />
           </div>
 
@@ -146,7 +156,7 @@ export const ProjectTracker: React.FC<ProjectTrackerProps> = ({
           <select
             value={selectedDept || ''}
             onChange={(e) => onSelectDept(e.target.value)}
-            className="text-xs bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="text-xs bg-white/90 border border-black/[0.08] rounded-full px-3.5 py-2 text-slate-800 focus:ring-2 focus:ring-[#007AFF] shadow-2xs cursor-pointer"
           >
             <option value="">ทุกหน่วยงาน / ทุกภาควิชา</option>
             <option value="งานยุทธศาสตร์และบุคคล">งานยุทธศาสตร์และบุคคล</option>
@@ -165,7 +175,7 @@ export const ProjectTracker: React.FC<ProjectTrackerProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="text-xs bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="text-xs bg-white/90 border border-black/[0.08] rounded-full px-3.5 py-2 text-slate-800 focus:ring-2 focus:ring-[#007AFF] shadow-2xs cursor-pointer"
           >
             <option value="all">ทุกสถานะการดำเนินงาน</option>
             <option value="planned">รอการดำเนินการ (ยังไม่ขอเบิก)</option>

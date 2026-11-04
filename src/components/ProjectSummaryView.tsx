@@ -83,20 +83,20 @@ export const ProjectSummaryView: React.FC<ProjectSummaryViewProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden mb-6">
+    <div className="bg-white/80 backdrop-blur-xl rounded-[28px] border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] overflow-hidden mb-6 transition-all duration-200">
       {/* Header Banner */}
-      <div className="p-5 border-b border-slate-200 bg-gradient-to-r from-teal-50/70 via-indigo-50/40 to-slate-50">
+      <div className="p-6 border-b border-black/[0.05] bg-white/40 backdrop-blur-md">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-100 shrink-0">
-              <FileCheck2 className="w-5 h-5" />
+            <div className="w-11 h-11 rounded-[16px] bg-gradient-to-tr from-[#30B0C7] to-[#007AFF] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(48,176,199,0.3)] shrink-0">
+              <FileCheck2 className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#30B0C7]/15 text-[#1b7e90] border border-[#30B0C7]/20">
                   ระบบสรุปโครงการ (Project Completion Vault)
                 </span>
-                <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+                <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
                   จัดเก็บเอกสารอนุมัติและเอกสารสรุปโครงการที่เสร็จสิ้น
                 </span>
               </div>
@@ -109,7 +109,7 @@ export const ProjectSummaryView: React.FC<ProjectSummaryViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onOpenNewSummary}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#30B0C7] hover:bg-[#289bb2] active:scale-95 text-white text-xs font-bold shadow-[0_2px_10px_rgba(48,176,199,0.3)] transition cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>บันทึกสรุปโครงการใหม่</span>
@@ -117,37 +117,37 @@ export const ProjectSummaryView: React.FC<ProjectSummaryViewProps> = ({
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-slate-200/80 text-xs">
-          <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-[10px] text-slate-500 uppercase block font-semibold">โครงการที่สรุปแล้ว</span>
+        {/* Stats Row (iOS 26 Mini Widgets) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-black/[0.05] text-xs">
+          <div className="bg-white/80 p-3 rounded-[16px] border border-black/[0.04] shadow-2xs">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">โครงการที่สรุปแล้ว</span>
             <span className="text-base font-extrabold text-slate-900">{summaries.length} โครงการ</span>
           </div>
-          <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-[10px] text-slate-500 uppercase block font-semibold">งบประมาณที่ใช้จริง</span>
-            <span className="text-base font-extrabold text-emerald-700">฿{formatBaht(totalActualSpent)}</span>
+          <div className="bg-white/80 p-3 rounded-[16px] border border-black/[0.04] shadow-2xs">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">งบประมาณที่ใช้จริง</span>
+            <span className="text-base font-extrabold text-[#34C759]">฿{formatBaht(totalActualSpent)}</span>
           </div>
-          <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-[10px] text-slate-500 uppercase block font-semibold">งบคงเหลือส่งคืนคลัง</span>
-            <span className="text-base font-extrabold text-indigo-700">฿{formatBaht(totalReturned)}</span>
+          <div className="bg-white/80 p-3 rounded-[16px] border border-black/[0.04] shadow-2xs">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">งบคงเหลือส่งคืนคลัง</span>
+            <span className="text-base font-extrabold text-[#007AFF]">฿{formatBaht(totalReturned)}</span>
           </div>
-          <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-            <span className="text-[10px] text-slate-500 uppercase block font-semibold">เอกสารหลักฐานที่จัดเก็บ</span>
-            <span className="text-base font-extrabold text-purple-700">{totalDocsCount} ไฟล์ (Firebase)</span>
+          <div className="bg-white/80 p-3 rounded-[16px] border border-black/[0.04] shadow-2xs">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">เอกสารหลักฐานที่จัดเก็บ</span>
+            <span className="text-base font-extrabold text-[#5856D6]">{totalDocsCount} ไฟล์ (Firebase)</span>
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Filters (iOS 26 Search & Controls) */}
         <div className="mt-4 flex flex-wrap gap-2.5 items-center">
-          {/* Search */}
+          {/* Cupertino Search */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
             <input
               type="text"
               placeholder="ค้นหาชื่อโครงการ, ผู้รับผิดชอบ หรือหน่วยงาน..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full text-xs pl-9 pr-4 py-2 rounded-full bg-[#767680]/10 border-0 focus:outline-none focus:ring-2 focus:ring-[#30B0C7] text-slate-800 placeholder-slate-400 transition"
             />
           </div>
 
@@ -155,7 +155,7 @@ export const ProjectSummaryView: React.FC<ProjectSummaryViewProps> = ({
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            className="text-xs bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 cursor-pointer"
+            className="text-xs bg-white/90 border border-black/[0.08] rounded-full px-3.5 py-2 text-slate-800 focus:ring-2 focus:ring-[#30B0C7] shadow-2xs cursor-pointer"
           >
             <option value="">ทุกหน่วยงาน / สาขาวิชา</option>
             <option value="งานยุทธศาสตร์และบุคคล">งานยุทธศาสตร์และบุคคล</option>

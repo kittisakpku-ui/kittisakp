@@ -21,14 +21,14 @@ interface CategoryChartProps {
 }
 
 const COLORS = [
-  '#4f46e5', // Indigo
-  '#06b6d4', // Cyan
-  '#10b981', // Emerald
-  '#f59e0b', // Amber
-  '#ec4899', // Pink
-  '#8b5cf6', // Violet
-  '#64748b', // Slate
-  '#3b82f6', // Blue
+  '#007AFF', // System Blue
+  '#30B0C7', // System Teal
+  '#34C759', // System Green
+  '#FF9500', // System Orange
+  '#5856D6', // System Indigo
+  '#AF52DE', // System Purple
+  '#FF2D55', // System Pink
+  '#8E8E93', // System Gray
 ];
 
 export const CategoryChart: React.FC<CategoryChartProps> = ({ projects, period }) => {
@@ -89,25 +89,27 @@ export const CategoryChart: React.FC<CategoryChartProps> = ({ projects, period }
   };
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs mb-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+    <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[24px] border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] mb-6 transition-all duration-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-black/[0.05] gap-3">
         <div>
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <PieChartIcon className="w-5 h-5 text-indigo-600" />
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-[9px] bg-gradient-to-tr from-[#007AFF] to-[#30B0C7] flex items-center justify-center text-white shadow-xs">
+              <PieChartIcon className="w-4 h-4 stroke-[2.2]" />
+            </div>
             <span>สัดส่วนยอดงบประมาณตามหมวดหมู่</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-[11px] text-slate-500 mt-0.5">
             โครงสร้างการจัดสรรงบประมาณเงินอุดหนุน คณะสังคมศาสตร์ ประจำปี 2570
           </p>
         </div>
 
-        {/* Chart View Toggle Tabs */}
-        <div className="inline-flex rounded-lg bg-slate-100 p-1 text-xs font-medium self-start sm:self-auto">
+        {/* Chart View Toggle Tabs (iOS 26 Segmented Control) */}
+        <div className="inline-flex rounded-full bg-[#767680]/12 p-1 text-xs font-semibold self-start sm:self-auto border border-black/[0.03] backdrop-blur-md">
           <button
             onClick={() => setActiveTab('fund')}
-            className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
               activeTab === 'fund' 
-                ? 'bg-white text-indigo-700 shadow-2xs font-semibold' 
+                ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.12)] font-bold' 
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -115,19 +117,19 @@ export const CategoryChart: React.FC<CategoryChartProps> = ({ projects, period }
           </button>
           <button
             onClick={() => setActiveTab('group')}
-            className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
               activeTab === 'group' 
-                ? 'bg-white text-indigo-700 shadow-2xs font-semibold' 
+                ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.12)] font-bold' 
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            กลุ่มโครงการยอดนิยม
+            กลุ่มโครงการ
           </button>
           <button
             onClick={() => setActiveTab('type')}
-            className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
               activeTab === 'type' 
-                ? 'bg-white text-indigo-700 shadow-2xs font-semibold' 
+                ? 'bg-white text-[#007AFF] shadow-[0_2px_8px_rgba(0,0,0,0.12)] font-bold' 
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >

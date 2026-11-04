@@ -95,14 +95,16 @@ export const DepartmentView: React.FC<DepartmentViewProps> = ({
   }));
 
   return (
-    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs mb-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+    <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[24px] border border-white/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] mb-6 transition-all duration-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-black/[0.05] gap-3">
         <div>
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Building className="w-5 h-5 text-indigo-600" />
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-[9px] bg-gradient-to-tr from-[#5856D6] to-[#007AFF] flex items-center justify-center text-white shadow-xs">
+              <Building className="w-4 h-4 stroke-[2.2]" />
+            </div>
             <span>ข้อมูลงบประมาณจำแนกตามหน่วยงาน & ภาควิชา/สาขา</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-[11px] text-slate-500 mt-0.5">
             เปรียบเทียบการจัดสรรและการเบิกจ่ายของ 10 หน่วยงานในคณะสังคมศาสตร์
           </p>
         </div>
@@ -110,7 +112,7 @@ export const DepartmentView: React.FC<DepartmentViewProps> = ({
         {selectedDept && (
           <button
             onClick={() => onSelectDepartment && onSelectDepartment('')}
-            className="text-xs font-semibold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition self-start sm:self-auto cursor-pointer"
+            className="text-xs font-semibold px-3 py-1 rounded-full bg-[#007AFF]/10 text-[#007AFF] hover:bg-[#007AFF]/20 transition active:scale-95 self-start sm:self-auto cursor-pointer"
           >
             ล้างตัวกรอง ({selectedDept}) ✕
           </button>
@@ -121,7 +123,7 @@ export const DepartmentView: React.FC<DepartmentViewProps> = ({
       <div className="mt-4 h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 25 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
             <XAxis dataKey="name" interval={0} angle={-25} textAnchor="end" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} tick={{ fontSize: 11 }} />
             <Tooltip 
@@ -134,15 +136,15 @@ export const DepartmentView: React.FC<DepartmentViewProps> = ({
                 return found ? found.fullName : label;
               }}
             />
-            <Legend verticalAlign="top" wrapperStyle={{ fontSize: '12px', paddingBottom: '8px' }} />
-            <Bar dataKey="งบจัดสรร" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="ยอดขอเบิก" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="ใช้จริง" fill="#10b981" radius={[4, 4, 0, 0]} />
+            <Legend verticalAlign="top" wrapperStyle={{ fontSize: '11px', paddingBottom: '10px' }} />
+            <Bar dataKey="งบจัดสรร" fill="#007AFF" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="ยอดขอเบิก" fill="#FF9500" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="ใช้จริง" fill="#34C759" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Department Cards Grid */}
+      {/* Department Cards Grid (iOS Inset Widgets) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-5">
         {departmentList.map((dept) => {
           const isSelected = selectedDept === dept.name;
@@ -157,10 +159,10 @@ export const DepartmentView: React.FC<DepartmentViewProps> = ({
             <div
               key={dept.name}
               onClick={() => onSelectDepartment && onSelectDepartment(isSelected ? '' : dept.name)}
-              className={`p-3.5 rounded-xl border transition cursor-pointer relative ${
+              className={`p-4 rounded-[18px] border transition-all duration-200 cursor-pointer relative active:scale-[0.98] ${
                 isSelected 
-                  ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20' 
-                  : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:border-slate-300'
+                  ? 'border-[#007AFF] bg-white shadow-[0_4px_16px_rgba(0,122,255,0.14)] ring-2 ring-[#007AFF]/25' 
+                  : 'border-black/[0.05] bg-white/70 hover:bg-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]'
               }`}
             >
               <div className="flex items-start justify-between">

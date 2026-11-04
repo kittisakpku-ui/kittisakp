@@ -69,51 +69,53 @@ export const MarketingInsights: React.FC<MarketingInsightsProps> = ({ projects }
   }));
 
   return (
-    <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 text-white p-6 rounded-2xl shadow-xl border border-indigo-800/40 mb-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-5 border-b border-indigo-800/50 gap-4">
+    <div className="bg-[#1C1C1E]/95 backdrop-blur-2xl text-white p-6 rounded-[28px] shadow-[0_12px_40px_rgba(0,0,0,0.16)] border border-white/10 mb-6 transition-all">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-5 border-b border-white/10 gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold border border-indigo-400/30">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#007AFF]/20 text-[#5AC8FA] text-[11px] font-semibold border border-[#007AFF]/30">
               Strategic & Marketing Engine
             </span>
-            <span className="text-xs text-indigo-300">
+            <span className="text-[11px] text-slate-400">
               วิเคราะห์เพื่อการตัดสินใจเชิงการตลาดและการเติบโต
             </span>
           </div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white mt-1 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-indigo-400" />
+          <h2 className="text-base sm:text-lg font-bold tracking-tight text-white mt-1 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-[#007AFF] to-[#5856D6] flex items-center justify-center text-white shadow-[0_2px_8px_rgba(0,122,255,0.3)]">
+              <TrendingUp className="w-4 h-4 stroke-[2.2]" />
+            </div>
             <span>ศูนย์ข้อมูลเชิงลึกการตลาด & ศักยภาพการสร้างรายได้ คณะสังคมศาสตร์</span>
           </h2>
         </div>
 
-        {/* Action Toggle Pills */}
-        <div className="flex flex-wrap gap-1.5 bg-slate-800/60 p-1 rounded-xl border border-indigo-700/40 text-xs">
+        {/* Action Toggle Pills (iOS 26 Dark Segmented Control) */}
+        <div className="flex flex-wrap gap-1 bg-[#2C2C2E]/80 p-1 rounded-full border border-white/8 text-xs font-semibold backdrop-blur-md">
           <button
             onClick={() => setSelectedTopic('recruitment')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
               selectedTopic === 'recruitment' 
-                ? 'bg-indigo-600 text-white font-semibold shadow-xs' 
-                : 'text-slate-300 hover:text-white'
+                ? 'bg-[#007AFF] text-white font-bold shadow-[0_2px_10px_rgba(0,122,255,0.4)]' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             การตลาดรับนิสิต (PR & Outreach)
           </button>
           <button
             onClick={() => setSelectedTopic('commercial')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
               selectedTopic === 'commercial' 
-                ? 'bg-indigo-600 text-white font-semibold shadow-xs' 
-                : 'text-slate-300 hover:text-white'
+                ? 'bg-[#007AFF] text-white font-bold shadow-[0_2px_10px_rgba(0,122,255,0.4)]' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             หลักสูตรสร้างรายได้ & บริการวิชาการ
           </button>
           <button
             onClick={() => setSelectedTopic('reallocation')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
               selectedTopic === 'reallocation' 
-                ? 'bg-indigo-600 text-white font-semibold shadow-xs' 
-                : 'text-slate-300 hover:text-white'
+                ? 'bg-[#007AFF] text-white font-bold shadow-[0_2px_10px_rgba(0,122,255,0.4)]' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             โอกาสปรับเกลี่ยงบ (Reallocation)

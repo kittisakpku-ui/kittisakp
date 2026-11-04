@@ -308,11 +308,18 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-['Prompt',sans-serif] selection:bg-indigo-500 selection:text-white">
-      {/* Toast Notification */}
+    <div className="min-h-screen bg-[#F2F2F7] relative flex flex-col font-['Prompt',-apple-system,BlinkMacSystemFont,sans-serif] selection:bg-[#007AFF] selection:text-white overflow-x-hidden antialiased">
+      {/* iOS 26 Ambient Light Orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/12 via-indigo-300/10 to-purple-400/10 rounded-full blur-3xl opacity-75"></div>
+        <div className="absolute top-1/3 -right-40 w-[550px] h-[550px] bg-gradient-to-bl from-teal-300/12 via-cyan-300/10 to-blue-300/10 rounded-full blur-3xl opacity-65"></div>
+        <div className="absolute bottom-10 left-10 w-[450px] h-[450px] bg-gradient-to-tr from-purple-300/10 via-pink-300/8 to-indigo-300/10 rounded-full blur-3xl opacity-60"></div>
+      </div>
+
+      {/* iOS 26 Dynamic Island Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-2.5 text-xs font-semibold animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#1C1C1E]/88 backdrop-blur-2xl text-white px-5 py-2.5 rounded-full shadow-[0_12px_36px_rgba(0,0,0,0.22),0_2px_8px_rgba(0,0,0,0.1)] border border-white/12 flex items-center gap-3 text-xs font-semibold animate-in fade-in slide-in-from-top-4 duration-300 tracking-tight">
+          <div className="w-2 h-2 rounded-full bg-[#34C759] animate-pulse"></div>
           <span>{toastMessage}</span>
         </div>
       )}
