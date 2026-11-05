@@ -37,6 +37,7 @@ interface HeaderProps {
   activeTab: 'dashboard' | 'summaries';
   onTabChange: (tab: 'dashboard' | 'summaries') => void;
   summaryCount: number;
+  pendingMembersCount?: number;
   isSyncing: boolean;
   onSyncNow: () => void;
 }
@@ -59,6 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onTabChange,
   summaryCount,
+  pendingMembersCount = 0,
   isSyncing,
   onSyncNow,
 }) => {
@@ -282,11 +284,16 @@ export const Header: React.FC<HeaderProps> = ({
             {/* User Management */}
             <button
               onClick={onOpenUserManagement}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white active:scale-95 border border-black/[0.06] text-slate-700 text-xs font-semibold transition cursor-pointer shadow-2xs"
-              title="จัดการรายชื่อและสิทธิ์สมาชิก"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white active:scale-95 border border-black/[0.06] text-slate-700 text-xs font-semibold transition cursor-pointer shadow-2xs relative"
+              title="จัดการรายชื่อ อนุมัติ และกำหนดสิทธิ์สมาชิก"
             >
               <Users className="w-3.5 h-3.5 text-[#5856D6]" />
               <span className="hidden lg:inline">สมาชิก</span>
+              {pendingMembersCount > 0 && currentUser?.role === 'admin' && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-extrabold animate-pulse ml-0.5">
+                  {pendingMembersCount}
+                </span>
+              )}
             </button>
 
             {/* System Settings (Admin only) */}

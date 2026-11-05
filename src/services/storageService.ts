@@ -61,19 +61,38 @@ export class StorageService {
         const list: AppMember[] = JSON.parse(stored);
         let updated = false;
 
-        // Ensure super admin has password fssnu1932
+        // Ensure super admin has password fssnu1932, approved status, and faculty-wide access
         const adminIndex = list.findIndex(m => m.email === 'kittisakpku@gmail.com');
         if (adminIndex >= 0) {
-          if (list[adminIndex].password !== 'fssnu1932' || !list[adminIndex].username) {
+          if (
+            list[adminIndex].password !== 'fssnu1932' || 
+            !list[adminIndex].username || 
+            list[adminIndex].status !== 'approved' ||
+            list[adminIndex].dataAccessScope !== 'all'
+          ) {
             list[adminIndex].password = 'fssnu1932';
             list[adminIndex].username = 'admin';
+            list[adminIndex].status = 'approved';
+            list[adminIndex].dataAccessScope = 'all';
             updated = true;
           }
         } else {
           // Re-insert super admin
-          list.unshift(INITIAL_MEMBERS[0]);
+          list.unshift({ ...INITIAL_MEMBERS[0], status: 'approved', dataAccessScope: 'all' });
           updated = true;
         }
+
+        // Ensure legacy members without status default to 'approved'
+        list.forEach(m => {
+          if (!m.status) {
+            m.status = 'approved';
+            updated = true;
+          }
+          if (!m.dataAccessScope) {
+            m.dataAccessScope = (m.role === 'admin' || m.role === 'executive' || m.role === 'finance_officer') ? 'all' : 'department_only';
+            updated = true;
+          }
+        });
 
         if (updated) {
           localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(list));

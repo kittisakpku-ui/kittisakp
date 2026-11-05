@@ -26,6 +26,8 @@ export const INITIAL_MEMBERS: AppMember[] = [
     canAttachDocs: true,
     canManageUsers: true,
     canConfigureSystem: true,
+    status: 'approved',
+    dataAccessScope: 'all',
     createdAt: '2026-10-01T08:00:00Z',
   },
   {

@@ -98,6 +98,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
+    // Check approval status (Super Admin is always approved)
+    const isSuperAdminAccount = found.role === 'admin' || found.email === 'kittisakpku@gmail.com' || cleanId === 'admin';
+    if (!isSuperAdminAccount) {
+      if (found.status === 'pending') {
+        setLoginError('⏳ บัญชีนี้กำลังรอการอนุมัติจาก Super Admin ก่อนจึงจะสามารถเข้าสู่ระบบได้ กรุณารอการตรวจสอบและอนุมัติสิทธิ์');
+        return;
+      }
+      if (found.status === 'rejected') {
+        setLoginError('🚫 บัญชีนี้ไม่ได้รับการอนุมัติหรือถูกระงับสิทธิ์การใช้งาน กรุณาติดต่อ Super Admin');
+        return;
+      }
+    }
+
     // Success
     onLogin(found);
     onClose();
@@ -154,6 +167,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const canManageUsers = regRole === 'admin';
     const canConfigureSystem = regRole === 'admin';
 
+    const isSuperAdmin = email === 'kittisakpku@gmail.com' || username === 'admin';
+
     const newMember: AppMember = {
       id: 'usr-' + Date.now(),
       username,
@@ -162,6 +177,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       displayName,
       department: regDepartment,
       role: regRole,
+      status: isSuperAdmin ? 'approved' : 'pending',
+      dataAccessScope: isSuperAdmin ? 'all' : 'department_only',
       canRecordExpense,
       canApprove,
       canTransfer,
@@ -172,11 +189,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     };
 
     onRegister(newMember);
-    onLogin(newMember);
-    setRegSuccess('สมัครสมาชิกสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว');
-    setTimeout(() => {
-      onClose();
-    }, 900);
+
+    if (newMember.status === 'approved') {
+      onLogin(newMember);
+      setRegSuccess('สมัครสมาชิกสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว');
+      setTimeout(() => {
+        onClose();
+      }, 900);
+    } else {
+      setRegSuccess('🎉 ส่งคำขอสมัครสมาชิกสำเร็จ! บัญชีของคุณอยู่ในสถานะ "รอการอนุมัติ (Pending Approval)" จาก Super Admin ก่อน จึงจะสามารถเข้าสู่ระบบและเข้าถึงข้อมูลได้');
+      setRegPassword('');
+      setRegConfirmPassword('');
+    }
   };
 
   const handleSelectAdminAccount = () => {
@@ -363,6 +387,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* MODE 2: REGISTER (USER DEFINES USERNAME & PASSWORD) */}
           {mode === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
+              {/* Approval Policy Notice */}
+              <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-[11px] flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="leading-tight">
+                  <strong className="font-semibold text-amber-800">นโยบายความปลอดภัยของคณะ:</strong> ผู้สมัครสมาชิกใหม่ทุกคนต้องได้รับการตรวจสอบและอนุมัติสิทธิ์จาก <strong>Super Admin</strong> ก่อน จึงจะสามารถเข้าสู่ระบบและเข้าถึงข้อมูลได้
+                </div>
+              </div>
+
               {regError && (
                 <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -370,9 +402,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               )}
               {regSuccess && (
-                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>{regSuccess}</span>
+                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-2">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span className="font-medium">{regSuccess}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('login');
+                      setRegSuccess('');
+                    }}
+                    className="w-full py-1.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition active:scale-95 cursor-pointer text-center"
+                  >
+                    กลับไปที่หน้าเข้าสู่ระบบ (Sign In)
+                  </button>
                 </div>
               )}
 
@@ -515,7 +559,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#5856D6] to-[#007AFF] hover:opacity-95 active:scale-[0.98] text-white text-xs font-bold shadow-[0_2px_12px_rgba(88,86,214,0.3)] transition cursor-pointer flex items-center justify-center gap-2 mt-3"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>ยืนยันการสมัครและเข้าสู่ระบบ</span>
+                <span>ส่งคำขอสมัครสมาชิก (รอ Super Admin อนุมัติ)</span>
               </button>
 
               <div className="text-center pt-1">

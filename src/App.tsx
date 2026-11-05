@@ -113,6 +113,10 @@ export default function App() {
     });
   }, [transfers, projects, currentUser, isPrivileged]);
 
+  const pendingMembersCount = React.useMemo(() => {
+    return members.filter(m => m.status === 'pending').length;
+  }, [members]);
+
   // 1. Record Disbursement & Actual Spent
   const handleSaveDisbursement = (projectId: string, disbursement: DisbursementRound) => {
     const targetProject = projects.find(p => p.id === projectId);
@@ -213,6 +217,14 @@ export default function App() {
   };
 
   const handleSwitchUser = (member: AppMember) => {
+    if (member.status === 'pending') {
+      showToast('❌ บัญชีนี้ยังไม่ได้รับการอนุมัติจาก Super Admin กรุณารอการอนุมัติ');
+      return;
+    }
+    if (member.status === 'rejected') {
+      showToast('❌ บัญชีนี้ไม่ได้รับการอนุมัติหรือถูกระงับสิทธิ์');
+      return;
+    }
     localStorage.removeItem('socsci_logged_out');
     setCurrentUser(member);
     StorageService.saveActiveUser(member);
@@ -228,16 +240,21 @@ export default function App() {
   };
 
   const handleRegisterUser = (newMember: AppMember) => {
-    localStorage.removeItem('socsci_logged_out');
     setMembers(prev => {
       const updated = [...prev, newMember];
       StorageService.saveMembers(updated);
       return updated;
     });
-    setCurrentUser(newMember);
-    StorageService.saveActiveUser(newMember);
-    setIsAuthOpen(false);
-    showToast(`ยินดีต้อนรับ ${newMember.displayName} สมัครสมาชิกสำเร็จ`);
+
+    if (newMember.status === 'approved') {
+      localStorage.removeItem('socsci_logged_out');
+      setCurrentUser(newMember);
+      StorageService.saveActiveUser(newMember);
+      setIsAuthOpen(false);
+      showToast(`ยินดีต้อนรับ ${newMember.displayName} สมัครสมาชิกสำเร็จ`);
+    } else {
+      showToast(`ส่งคำขอสมัครสมาชิกสำเร็จ (${newMember.displayName} อยู่ในสถานะรอ Super Admin อนุมัติ)`);
+    }
   };
 
   const handleAddMember = (newMemberData: Omit<AppMember, 'id' | 'createdAt'>) => {
@@ -437,6 +454,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         summaryCount={summaries.length}
+        pendingMembersCount={pendingMembersCount}
         isSyncing={isSyncing}
         onSyncNow={handleSyncNow}
       />

@@ -110,6 +110,9 @@ export const FACULTY_DEPARTMENTS = [
 
 export type FacultyDepartment = typeof FACULTY_DEPARTMENTS[number] | string;
 
+export type MemberStatus = 'pending' | 'approved' | 'rejected';
+export type DataAccessScope = 'all' | 'department_only';
+
 export interface AppMember {
   id: string;
   username?: string;
@@ -119,6 +122,8 @@ export interface AppMember {
   department: FacultyDepartment;
   role: UserRole;
   avatarUrl?: string;
+  status?: MemberStatus; // 'pending' (รอ super admin อนุมัติ), 'approved' (อนุมัติแล้ว), 'rejected' (ไม่อนุมัติ/ระงับ)
+  dataAccessScope?: DataAccessScope; // 'all' (เข้าถึงทุกโครงการทั่วคณะ) | 'department_only' (เฉพาะหน่วยงานตนเอง)
   canRecordExpense: boolean;
   canApprove: boolean;
   canTransfer: boolean;
@@ -126,6 +131,9 @@ export interface AppMember {
   canManageUsers: boolean;
   canConfigureSystem: boolean;
   createdAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectionReason?: string;
 }
 
 export interface SystemConfig {
@@ -182,15 +190,31 @@ export const normalizeDepartment = (dept: string = ''): string => {
  */
 export const isPrivilegedViewer = (user?: AppMember | null): boolean => {
   if (!user) return false;
-  // 1. Super Admin
+
+  // บัญชีที่ยังไม่ได้รับการอนุมัติ หรือถูกระงับ จะไม่มีสิทธิ์เข้าถึงข้อมูล
+  if (user.status === 'pending' || user.status === 'rejected') {
+    return false;
+  }
+
+  // 1. Super Admin มีสิทธิ์สูงสุดตลอดเวลา
   if (user.role === 'admin' || user.email === 'kittisakpku@gmail.com' || user.username === 'admin') {
     return true;
   }
-  // 2. ผู้บริหาร (Executive)
+
+  // 2. ขอบเขตการเข้าถึงข้อมูลที่ Super Admin กำหนดให้โดยตรง (Data Access Scope)
+  if (user.dataAccessScope === 'all') {
+    return true;
+  }
+  if (user.dataAccessScope === 'department_only') {
+    return false;
+  }
+
+  // 3. ผู้บริหาร (Executive)
   if (user.role === 'executive') {
     return true;
   }
-  // 3. เจ้าหน้าที่งานแผน (Finance officer, หรือสังกัดงานยุทธศาสตร์และบุคคล/งานการเงิน)
+
+  // 4. เจ้าหน้าที่งานแผน (Finance officer, หรือสังกัดงานยุทธศาสตร์และบุคคล/งานการเงิน)
   if (
     user.role === 'finance_officer' || 
     user.department === 'งานยุทธศาสตร์และบุคคล' || 
