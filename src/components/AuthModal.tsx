@@ -13,17 +13,19 @@ import {
   CheckCircle2, 
   AlertCircle,
   KeyRound,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 import { AppMember, UserRole, FACULTY_DEPARTMENTS, FacultyDepartment } from '../types/budget';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: AppMember;
+  currentUser: AppMember | null;
   members: AppMember[];
   onLogin: (member: AppMember) => void;
   onRegister: (newMember: AppMember) => void;
+  onLogout?: () => void;
   initialMode?: 'login' | 'register';
 }
 
@@ -34,6 +36,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   members,
   onLogin,
   onRegister,
+  onLogout,
   initialMode = 'login',
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
@@ -242,6 +245,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{loginError}</span>
+                </div>
+              )}
+
+              {/* Active Session & Logout option */}
+              {currentUser && (
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-2 shadow-2xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#007AFF] to-[#5856D6] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                      {currentUser.displayName.slice(0, 1)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 truncate">{currentUser.displayName}</div>
+                      <div className="text-[10px] text-slate-500 truncate">เข้าสู่ระบบอยู่ ({currentUser.department})</div>
+                    </div>
+                  </div>
+                  {onLogout && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onLogout();
+                        onClose();
+                      }}
+                      className="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-semibold border border-rose-200 transition shrink-0 cursor-pointer flex items-center gap-1"
+                    >
+                      <LogOut className="w-3 h-3" />
+                      <span>ออกจากระบบ</span>
+                    </button>
+                  )}
                 </div>
               )}
 

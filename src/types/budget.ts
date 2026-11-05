@@ -157,3 +157,100 @@ export type TimePeriodFilter =
   | '07/70'
   | '08/70'
   | '09/70';
+
+export const normalizeDepartment = (dept: string = ''): string => {
+  const d = dept.trim();
+  if (!d) return '';
+  if (d === 'งานวิจัยฯ' || d.includes('งานวิจัย')) return 'งานวิจัยและบริการวิชาการ';
+  if (d === 'งานพัฒนานิสิตฯ' || d.includes('กิจการนิสิต') || d.includes('พัฒนานิสิต')) return 'งานกิจการนิสิตและศิษย์เก่าสัมพันธ์';
+  if (d === 'งานยุทธศาสตร์' || d.includes('ยุทธศาสตร์')) return 'งานยุทธศาสตร์และบุคคล';
+  if (d.includes('การเงิน')) return 'งานการเงิน';
+  if (d.includes('พัสดุ')) return 'งานพัสดุ';
+  if (d.includes('บริการการศึกษา')) return 'งานบริการการศึกษา';
+  if (d.includes('อำนวยการ')) return 'งานอำนวยการ';
+  if (d.includes('จิตวิทยา')) return 'จิตวิทยา';
+  if (d.includes('ประวัติศาสตร์')) return 'ประวัติศาสตร์';
+  if (d.includes('สังคมวิทยา')) return 'สังคมวิทยาฯ';
+  if (d.includes('รัฐศาสตร์')) return 'รัฐศาสตร์ฯ';
+  if (d.includes('สถาน') || d.includes('ประชาคมโลก')) return 'สถานฯ';
+  return d;
+};
+
+/**
+ * เจ้าหน้าที่งานแผน ผู้บริหาร และ super admin
+ * สามารถมองเห็นและจัดการได้ทั้งหมด
+ */
+export const isPrivilegedViewer = (user?: AppMember | null): boolean => {
+  if (!user) return false;
+  // 1. Super Admin
+  if (user.role === 'admin' || user.email === 'kittisakpku@gmail.com' || user.username === 'admin') {
+    return true;
+  }
+  // 2. ผู้บริหาร (Executive)
+  if (user.role === 'executive') {
+    return true;
+  }
+  // 3. เจ้าหน้าที่งานแผน (Finance officer, หรือสังกัดงานยุทธศาสตร์และบุคคล/งานการเงิน)
+  if (
+    user.role === 'finance_officer' || 
+    user.department === 'งานยุทธศาสตร์และบุคคล' || 
+    user.department === 'งานการเงิน'
+  ) {
+    return true;
+  }
+  return false;
+};
+
+/**
+ * ตรวจสอบว่าผู้ใช้รับผิดชอบโครงการนี้หรือไม่ (หากไม่ใช่ admin/งานแผน/ผู้บริหาร จะดูได้เฉพาะส่วนที่รับผิดชอบ)
+ */
+export const isUserResponsibleForProject = (user?: AppMember | null, project?: BudgetProject | null): boolean => {
+  if (!user || !project) return false;
+  if (isPrivilegedViewer(user)) return true;
+
+  const userDeptNorm = normalizeDepartment(user.department);
+  const projDeptNorm = normalizeDepartment(project.department);
+
+  if (userDeptNorm && projDeptNorm && userDeptNorm === projDeptNorm) {
+    return true;
+  }
+
+  // Check if project has responsible officer matching user
+  const officer = (project.responsibleOfficer || '').toLowerCase();
+  const uName = (user.displayName || '').toLowerCase();
+  const uEmail = (user.email || '').toLowerCase();
+  const uUsername = (user.username || '').toLowerCase();
+
+  if (officer && (officer.includes(uName) || officer.includes(uEmail) || officer.includes(uUsername))) {
+    return true;
+  }
+
+  // Also check if any disbursement was recorded by this user
+  if (project.disbursements && project.disbursements.some(d => 
+    (d.responsiblePerson && (d.responsiblePerson.includes(user.displayName) || d.responsiblePerson.includes(user.email)))
+  )) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * ตรวจสอบว่าผู้ใช้รับผิดชอบสรุปโครงการนี้หรือไม่
+ */
+export const isUserResponsibleForSummary = (user?: AppMember | null, summary?: ProjectSummaryRecord | null): boolean => {
+  if (!user || !summary) return false;
+  if (isPrivilegedViewer(user)) return true;
+
+  if (summary.responsibleEmail === user.email || summary.createdBy === user.email) {
+    return true;
+  }
+
+  const userDeptNorm = normalizeDepartment(user.department);
+  const sumDeptNorm = normalizeDepartment(summary.department);
+  if (userDeptNorm && sumDeptNorm && userDeptNorm === sumDeptNorm) {
+    return true;
+  }
+
+  return false;
+};

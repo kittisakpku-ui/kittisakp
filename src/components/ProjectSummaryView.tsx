@@ -20,7 +20,13 @@ import {
   ChevronUp,
   ExternalLink
 } from 'lucide-react';
-import { ProjectSummaryRecord, AppMember, BudgetProject } from '../types/budget';
+import { 
+  ProjectSummaryRecord, 
+  AppMember, 
+  BudgetProject,
+  isPrivilegedViewer,
+  isUserResponsibleForSummary
+} from '../types/budget';
 
 interface ProjectSummaryViewProps {
   summaries: ProjectSummaryRecord[];
@@ -44,18 +50,22 @@ export const ProjectSummaryView: React.FC<ProjectSummaryViewProps> = ({
   const [ownershipFilter, setOwnershipFilter] = useState<'all' | 'mine' | 'others'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Check if current user is Admin or Planning Staff
-  const isPlanningOrAdmin = 
-    currentUser.role === 'admin' || 
-    currentUser.role === 'finance_officer' || 
-    currentUser.department === 'งานยุทธศาสตร์และบุคคล';
+  // Check if current user is Super Admin, Executive, or Planning Staff
+  const isPrivileged = isPrivilegedViewer(currentUser);
 
   // Filter summaries
   const filteredSummaries = summaries.filter(s => {
-    // Ownership filter
+    // Non-privileged users can ONLY see summaries of their own responsibility!
+    if (!isPrivileged && !isUserResponsibleForSummary(currentUser, s)) {
+      return false;
+    }
+
+    // Ownership filter (for privileged users)
     const isMine = s.responsibleEmail === currentUser.email || s.createdBy === currentUser.email;
-    if (ownershipFilter === 'mine' && !isMine) return false;
-    if (ownershipFilter === 'others' && isMine) return false;
+    if (isPrivileged) {
+      if (ownershipFilter === 'mine' && !isMine) return false;
+      if (ownershipFilter === 'others' && isMine) return false;
+    }
 
     // Dept filter
     if (deptFilter && s.department !== deptFilter) return false;
@@ -208,8 +218,10 @@ export const ProjectSummaryView: React.FC<ProjectSummaryViewProps> = ({
           </div>
         ) : (
           filteredSummaries.map((summary) => {
-            const isOwner = summary.responsibleEmail === currentUser.email || summary.createdBy === currentUser.email;
-            const canModify = isPlanningOrAdmin || isOwner;
+            const isOwner = summary.responsibleEmail === currentUser.email || 
+                            summary.createdBy === currentUser.email || 
+                            summary.department === currentUser.department;
+            const canModify = isPrivileged || isOwner;
             const isExpanded = expandedId === summary.id;
 
             return (
@@ -231,11 +243,11 @@ export const ProjectSummaryView: React.FC<ProjectSummaryViewProps> = ({
                           </span>
                         )}
 
-                        {/* Ownership Badge (Requirement 4 & 5) */}
-                        {isPlanningOrAdmin ? (
+                        {/* Ownership Badge */}
+                        {isPrivileged ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
                             <ShieldCheck className="w-3 h-3 text-purple-600" />
-                            สิทธิ์งานแผน/แอดมิน: แก้ไขและลบได้ทั้งหมด
+                            สิทธิ์งานแผน/ผู้บริหาร/แอดมิน: แก้ไขและลบได้ทั้งหมด
                           </span>
                         ) : isOwner ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">

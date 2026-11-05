@@ -20,7 +20,9 @@ import {
   ProjectSummaryRecord, 
   AttachedDocument, 
   AppMember,
-  FACULTY_DEPARTMENTS
+  FACULTY_DEPARTMENTS,
+  isPrivilegedViewer,
+  isUserResponsibleForProject
 } from '../types/budget';
 
 interface ProjectSummaryModalProps {
@@ -42,19 +44,17 @@ export const ProjectSummaryModal: React.FC<ProjectSummaryModalProps> = ({
   onSaveSummary,
   currentUser,
 }) => {
-  // Check if current user is Admin or Planning Staff
-  const isPlanningOrAdmin = 
-    currentUser.role === 'admin' || 
-    currentUser.role === 'finance_officer' || 
-    currentUser.department === 'งานยุทธศาสตร์และบุคคล';
+  // Check if current user is Super Admin, Executive, or Planning Staff
+  const isPrivileged = isPrivilegedViewer(currentUser);
 
   // Check ownership if editing
   const isOwner = summaryToEdit ? (
     summaryToEdit.responsibleEmail === currentUser.email || 
-    summaryToEdit.createdBy === currentUser.email
+    summaryToEdit.createdBy === currentUser.email ||
+    summaryToEdit.department === currentUser.department
   ) : true;
 
-  const canEdit = isPlanningOrAdmin || isOwner;
+  const canEdit = isPrivileged || isOwner;
 
   // Form states
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -259,9 +259,9 @@ export const ProjectSummaryModal: React.FC<ProjectSummaryModalProps> = ({
             </span>
           </div>
           <div>
-            {isPlanningOrAdmin ? (
+            {isPrivileged ? (
               <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-semibold text-[10px] border border-purple-200">
-                สิทธิ์แอดมิน/งานแผน: ปรับแก้ไขได้ทั้งหมด
+                สิทธิ์แอดมิน/งานแผน/ผู้บริหาร: ปรับแก้ไขได้ทั้งหมด
               </span>
             ) : (
               <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold text-[10px] border border-blue-200">
@@ -275,7 +275,7 @@ export const ProjectSummaryModal: React.FC<ProjectSummaryModalProps> = ({
           <div className="mx-6 mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
             <Lock className="w-4 h-4 text-amber-600 shrink-0" />
             <div>
-              <strong>โหมดอ่านอย่างเดียว (Read-Only):</strong> ท่านไม่สามารถแก้ไขรายการนี้ได้ เนื่องจากผู้รับผิดชอบคือ <strong>{summaryToEdit?.responsiblePerson} ({summaryToEdit?.responsibleEmail})</strong> ซึ่งสงวนสิทธิ์เฉพาะผู้รับผิดชอบโครงการ เจ้าหน้าที่งานแผน หรือแอดมินเท่านั้น
+              <strong>โหมดอ่านอย่างเดียว (Read-Only):</strong> ท่านไม่สามารถแก้ไขรายการนี้ได้ เนื่องจากผู้รับผิดชอบคือ <strong>{summaryToEdit?.responsiblePerson} ({summaryToEdit?.responsibleEmail})</strong> ซึ่งสงวนสิทธิ์เฉพาะผู้รับผิดชอบโครงการ เจ้าหน้าที่งานแผน ผู้บริหาร หรือ Super Admin เท่านั้น
             </div>
           </div>
         )}
@@ -660,8 +660,8 @@ export const ProjectSummaryModal: React.FC<ProjectSummaryModalProps> = ({
             >
               <option value="draft">ร่างรายงาน (Draft)</option>
               <option value="submitted">ส่งสรุปโครงการเรียบร้อย (Submitted)</option>
-              {isPlanningOrAdmin && (
-                <option value="approved">ผ่านการตรวจรับและอนุมัติแล้ว (Approved by Planning)</option>
+              {isPrivileged && (
+                <option value="approved">ผ่านการตรวจรับและอนุมัติแล้ว (Approved by Planning/Admin)</option>
               )}
             </select>
           </div>

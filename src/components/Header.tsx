@@ -14,14 +14,16 @@ import {
   FileCheck2,
   LayoutDashboard,
   UserPlus,
-  LogIn
+  LogIn,
+  LogOut
 } from 'lucide-react';
 import { TimePeriodFilter, AppMember } from '../types/budget';
 
 interface HeaderProps {
   currentPeriod: TimePeriodFilter;
   onPeriodChange: (period: TimePeriodFilter) => void;
-  currentUser: AppMember;
+  currentUser: AppMember | null;
+  onLogout: () => void;
   onSwitchUser: () => void;
   onOpenConnector: () => void;
   onOpenDisbursement: () => void;
@@ -43,6 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentPeriod,
   onPeriodChange,
   currentUser,
+  onLogout,
   onSwitchUser,
   onOpenConnector,
   onOpenDisbursement,
@@ -118,20 +121,45 @@ export const Header: React.FC<HeaderProps> = ({
               <span>สมัครสมาชิก</span>
             </button>
 
-            {/* Current User Pill / Switch / Login */}
-            <button
-              onClick={onOpenAuth}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white text-slate-800 text-xs transition active:scale-95 cursor-pointer border border-black/[0.06] shadow-2xs backdrop-blur-xs"
-              title="คลิกเพื่อสลับบัญชีผู้ใช้ หรือเข้าสู่ระบบด้วยรหัสผ่าน"
-            >
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#007AFF] to-[#5856D6] flex items-center justify-center text-white text-[10px] font-bold">
-                {currentUser.displayName.slice(0, 1)}
+            {/* Current User Pill / Switch / Login & Logout */}
+            {currentUser ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={onOpenAuth}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white text-slate-800 text-xs transition active:scale-95 cursor-pointer border border-black/[0.06] shadow-2xs backdrop-blur-xs"
+                  title="คลิกเพื่อสลับบัญชีผู้ใช้ หรือจัดการรหัสผ่าน"
+                >
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#007AFF] to-[#5856D6] flex items-center justify-center text-white text-[10px] font-bold">
+                    {currentUser.displayName.slice(0, 1)}
+                  </div>
+                  <div className="text-left leading-tight">
+                    <div className="font-semibold text-xs text-slate-900">{currentUser.displayName}</div>
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      {currentUser.department} • {currentUser.role === 'admin' ? 'Super Admin' : currentUser.role === 'executive' ? 'ผู้บริหาร' : (currentUser.role === 'finance_officer' || currentUser.department === 'งานยุทธศาสตร์และบุคคล') ? 'จนท.งานแผน' : 'ผู้รับผิดชอบ'}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Dedicated Logout Button (เมื่อเลิกใช้) */}
+                <button
+                  onClick={onLogout}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200/80 transition active:scale-95 cursor-pointer shadow-2xs backdrop-blur-xs"
+                  title="ออกจากระบบเมื่อเลิกใช้งาน เพื่อความปลอดภัย"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                  <span className="hidden sm:inline">ออกจากระบบ</span>
+                </button>
               </div>
-              <div className="text-left leading-tight">
-                <div className="font-semibold text-xs text-slate-900">{currentUser.displayName}</div>
-                <div className="text-[10px] text-slate-400 capitalize">{currentUser.department} • {currentUser.role === 'admin' ? 'Admin' : currentUser.role}</div>
-              </div>
-            </button>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#007AFF] hover:bg-[#0066d6] text-white text-xs font-semibold shadow-xs transition active:scale-95 cursor-pointer"
+                title="เข้าสู่ระบบด้วย Username/Email และ Password"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>เข้าสู่ระบบ</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -232,9 +260,9 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Record Disbursement */}
             <button
               onClick={onOpenDisbursement}
-              disabled={!currentUser.canRecordExpense}
+              disabled={!currentUser?.canRecordExpense}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#007AFF] hover:bg-[#0066d6] active:scale-95 text-white text-xs font-semibold shadow-[0_2px_10px_rgba(0,122,255,0.28)] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              title={currentUser.canRecordExpense ? 'บันทึกการขอใช้เงิน/ส่งสรุปค่าใช้จ่าย' : 'ท่านไม่มีสิทธิ์บันทึกการใช้เงิน'}
+              title={currentUser?.canRecordExpense ? 'บันทึกการขอใช้เงิน/ส่งสรุปค่าใช้จ่าย' : 'ท่านไม่มีสิทธิ์บันทึกการใช้เงิน'}
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>ขอใช้เงิน</span>
@@ -243,9 +271,9 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Inter-budget Transfer */}
             <button
               onClick={onOpenTransfer}
-              disabled={!currentUser.canTransfer}
+              disabled={!currentUser?.canTransfer}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white active:scale-95 border border-black/[0.06] text-slate-700 text-xs font-semibold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
-              title={currentUser.canTransfer ? 'โอนเงินระหว่างหมวด/โครงการ' : 'ท่านไม่มีสิทธิ์โอนงบประมาณ'}
+              title={currentUser?.canTransfer ? 'โอนเงินระหว่างหมวด/โครงการ' : 'ท่านไม่มีสิทธิ์โอนงบประมาณ'}
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-[#007AFF]" />
               <span className="hidden sm:inline">โอนงบ</span>
@@ -262,7 +290,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* System Settings (Admin only) */}
-            {currentUser.role === 'admin' && (
+            {currentUser?.role === 'admin' && (
               <button
                 onClick={onOpenSettings}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-white/90 hover:bg-white active:scale-95 border border-black/[0.06] text-slate-700 text-xs font-semibold transition cursor-pointer shadow-2xs"

@@ -23,9 +23,13 @@ import {
   SystemConfig, 
   TimePeriodFilter, 
   DisbursementRound,
-  ProjectSummaryRecord 
+  ProjectSummaryRecord,
+  isPrivilegedViewer,
+  isUserResponsibleForProject,
+  isUserResponsibleForSummary,
+  normalizeDepartment
 } from './types/budget';
-import { Building2, FileSpreadsheet, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Building2, FileSpreadsheet, ShieldAlert, CheckCircle2, Lock, ShieldCheck, Eye, LogIn, LogOut, UserPlus } from 'lucide-react';
 
 export default function App() {
   const [projects, setProjects] = useState<BudgetProject[]>(() => StorageService.loadProjects());
@@ -42,11 +46,15 @@ export default function App() {
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
 
   // Active User (Defaults to saved session or Super Admin kittisakpku@gmail.com)
-  const [currentUser, setCurrentUser] = useState<AppMember>(() => {
+  const [currentUser, setCurrentUser] = useState<AppMember | null>(() => {
     const saved = StorageService.getActiveUser();
     if (saved) return saved;
+    const isExplicitlyLoggedOut = localStorage.getItem('socsci_logged_out') === 'true';
+    if (isExplicitlyLoggedOut) return null;
     const list = StorageService.loadMembers();
-    return list.find(m => m.email === 'kittisakpku@gmail.com') || list[0];
+    const defaultAdmin = list.find(m => m.email === 'kittisakpku@gmail.com') || list[0];
+    StorageService.saveActiveUser(defaultAdmin);
+    return defaultAdmin;
   });
 
   // Modal Dialog States
@@ -77,8 +85,44 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // RBAC Permission Model:
+  // สมาชิกท่านอื่นๆ นอกจาก เจ้าหน้าที่งานแผน, ผู้บริหาร, และ super admin
+  // สามารถมองเห็นและจัดการเฉพาะส่วนที่ตนเองรับผิดชอบเท่านั้น
+  const isPrivileged = isPrivilegedViewer(currentUser);
+
+  const visibleProjects = React.useMemo(() => {
+    if (!currentUser) return [];
+    if (isPrivileged) return projects;
+    return projects.filter(p => isUserResponsibleForProject(currentUser, p));
+  }, [projects, currentUser, isPrivileged]);
+
+  const visibleSummaries = React.useMemo(() => {
+    if (!currentUser) return [];
+    if (isPrivileged) return summaries;
+    return summaries.filter(s => isUserResponsibleForSummary(currentUser, s));
+  }, [summaries, currentUser, isPrivileged]);
+
+  const visibleTransfers = React.useMemo(() => {
+    if (!currentUser) return [];
+    if (isPrivileged) return transfers;
+    return transfers.filter(t => {
+      const sProj = projects.find(p => p.id === t.sourceProjectId);
+      const tProj = projects.find(p => p.id === t.targetProjectId);
+      return (sProj && isUserResponsibleForProject(currentUser, sProj)) || 
+             (tProj && isUserResponsibleForProject(currentUser, tProj));
+    });
+  }, [transfers, projects, currentUser, isPrivileged]);
+
   // 1. Record Disbursement & Actual Spent
   const handleSaveDisbursement = (projectId: string, disbursement: DisbursementRound) => {
+    const targetProject = projects.find(p => p.id === projectId);
+    if (!targetProject) return;
+
+    if (!isPrivileged && !isUserResponsibleForProject(currentUser, targetProject)) {
+      showToast('❌ ปฏิเสธ: ท่านไม่มีสิทธิ์บันทึกการใช้เงินในโครงการที่ตนเองไม่ได้เป็นผู้รับผิดชอบ');
+      return;
+    }
+
     setProjects(prevProjects => {
       const updated = prevProjects.map(p => {
         if (p.id !== projectId) return p;
@@ -109,6 +153,11 @@ export default function App() {
 
   // 2. Execute Inter-Budget Transfer
   const handleExecuteTransfer = (transferData: Omit<BudgetTransferRecord, 'id'>) => {
+    const sourceProj = projects.find(p => p.id === transferData.sourceProjectId);
+    if (!isPrivileged && sourceProj && !isUserResponsibleForProject(currentUser, sourceProj)) {
+      showToast('❌ ปฏิเสธ: ท่านสามารถโอนงบประมาณได้เฉพาะโครงการที่ตนเองรับผิดชอบเท่านั้น');
+      return;
+    }
     const newRecord: BudgetTransferRecord = {
       ...transferData,
       id: 'tr-' + Date.now(),
@@ -156,13 +205,22 @@ export default function App() {
   };
 
   // 3. User Management & Auth Handlers
+  const handleLogout = () => {
+    StorageService.saveActiveUser(null);
+    localStorage.setItem('socsci_logged_out', 'true');
+    setCurrentUser(null);
+    showToast('ออกจากระบบเรียบร้อยแล้ว');
+  };
+
   const handleSwitchUser = (member: AppMember) => {
+    localStorage.removeItem('socsci_logged_out');
     setCurrentUser(member);
     StorageService.saveActiveUser(member);
     showToast(`สลับผู้ใช้งานเป็น: ${member.displayName} (${member.department})`);
   };
 
   const handleLoginUser = (member: AppMember) => {
+    localStorage.removeItem('socsci_logged_out');
     setCurrentUser(member);
     StorageService.saveActiveUser(member);
     setIsAuthOpen(false);
@@ -170,6 +228,7 @@ export default function App() {
   };
 
   const handleRegisterUser = (newMember: AppMember) => {
+    localStorage.removeItem('socsci_logged_out');
     setMembers(prev => {
       const updated = [...prev, newMember];
       StorageService.saveMembers(updated);
@@ -201,7 +260,7 @@ export default function App() {
       StorageService.saveMembers(updated);
       return updated;
     });
-    if (currentUser.id === updatedMember.id) {
+    if (currentUser && currentUser.id === updatedMember.id) {
       setCurrentUser(updatedMember);
     }
     showToast('อัปเดตสิทธิ์สมาชิกเรียบร้อยแล้ว');
@@ -258,6 +317,11 @@ export default function App() {
 
   // 7. Project Summary Handlers (User Request: Project Completion Vault & RBAC)
   const handleSaveSummary = (summaryData: ProjectSummaryRecord) => {
+    if (!isPrivileged && !isUserResponsibleForSummary(currentUser, summaryData)) {
+      showToast('❌ ปฏิเสธ: ท่านสามารถบันทึกสรุปโครงการได้เฉพาะส่วนที่ตนเองรับผิดชอบเท่านั้น');
+      return;
+    }
+
     setSummaries(prev => {
       const index = prev.findIndex(s => s.id === summaryData.id);
       let updated: ProjectSummaryRecord[];
@@ -296,16 +360,7 @@ export default function App() {
     const target = summaries.find(s => s.id === id);
     if (!target) return;
 
-    // RBAC: Check ownership vs Admin / Planning Officer
-    const isPlanningOrAdmin = 
-      currentUser.role === 'admin' || 
-      currentUser.role === 'finance_officer' || 
-      currentUser.department === 'งานยุทธศาสตร์และบุคคล';
-    const isOwner = 
-      target.responsibleEmail === currentUser.email || 
-      target.createdBy === currentUser.email;
-
-    if (!isPlanningOrAdmin && !isOwner) {
+    if (!isPrivileged && !isUserResponsibleForSummary(currentUser, target)) {
       showToast('❌ ปฏิเสธ: ท่านไม่มีสิทธิ์ลบรายการสรุปโครงการของผู้รับผิดชอบอื่น');
       return;
     }
@@ -356,6 +411,7 @@ export default function App() {
         currentPeriod={currentPeriod}
         onPeriodChange={setCurrentPeriod}
         currentUser={currentUser}
+        onLogout={handleLogout}
         onSwitchUser={() => setIsUserManagementOpen(true)}
         onOpenConnector={() => setIsConnectorOpen(true)}
         onOpenDisbursement={() => {
@@ -386,67 +442,151 @@ export default function App() {
       />
 
       {/* Main Container */}
+      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === 'dashboard' ? (
-          <>
-            {/* Top Financial KPI Metrics */}
-            <OverviewStats 
-              projects={projects} 
-              period={currentPeriod} 
-            />
+        {!currentUser ? (
+          /* iOS 26 Signed-Out / Lock Screen */
+          <div className="max-w-md mx-auto my-14 p-8 sm:p-10 rounded-[32px] bg-white/80 backdrop-blur-2xl border border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.08)] text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 rounded-[22px] bg-gradient-to-tr from-[#007AFF] via-[#5856D6] to-[#AF52DE] text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
+              <Lock className="w-8 h-8 stroke-[2.2]" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                ระบบปลอดภัย (Session Locked)
+              </span>
+              <h2 className="text-xl font-extrabold text-slate-900 mt-3 tracking-tight">
+                ออกจากระบบเรียบร้อยแล้ว
+              </h2>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                ระบบติดตามและบริหารงบประมาณ คณะสังคมศาสตร์ มหาวิทยาลัยนเรศวร<br />
+                เพื่อความปลอดภัยของข้อมูล กรุณาเข้าสู่ระบบด้วย Username หรือ Email และรหัสผ่านก่อนเข้าใช้งาน
+              </p>
+            </div>
 
-            {/* Strategic Marketing Engine (User Request) */}
-            <MarketingInsights 
-              projects={projects} 
-            />
-
-            {/* Proportions by Fund, Group, and Type */}
-            <CategoryChart 
-              projects={projects} 
-              period={currentPeriod} 
-            />
-
-            {/* 10 Departments & Branches View */}
-            <DepartmentView 
-              projects={projects}
-              onSelectDepartment={(dept) => setSelectedDept(dept)}
-              selectedDept={selectedDept}
-            />
-
-            {/* Comprehensive Project Milestones & 15-Round Tracker */}
-            <ProjectTracker
-              projects={projects}
-              period={currentPeriod}
-              selectedDept={selectedDept}
-              onSelectDept={(dept) => setSelectedDept(dept)}
-              onOpenDisbursement={(p) => {
-                setSelectedProjectForAction(p || null);
-                setIsDisbursementOpen(true);
-              }}
-              onOpenTransfer={(p) => {
-                setSelectedProjectForAction(p || null);
-                setIsTransferOpen(true);
-              }}
-              onOpenSummary={(p) => {
-                setSelectedProjectForAction(p);
-                // Prepopulate or search if existing summary
-                const existing = summaries.find(s => s.projectId === p.id);
-                setSummaryToEdit(existing || null);
-                setIsSummaryModalOpen(true);
-              }}
-              currentUser={currentUser}
-            />
-          </>
+            <div className="flex flex-col gap-2.5 pt-2">
+              <button
+                onClick={() => {
+                  setAuthMode('login');
+                  setIsAuthOpen(true);
+                }}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#007AFF] to-[#5856D6] hover:opacity-95 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>เข้าสู่ระบบ (Sign In)</span>
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode('register');
+                  setIsAuthOpen(true);
+                }}
+                className="w-full py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <UserPlus className="w-4 h-4 text-purple-600" />
+                <span>สมัครสมาชิกใหม่ (Register)</span>
+              </button>
+            </div>
+          </div>
         ) : (
-          /* Project Completion Summary Vault (User Request #4) */
-          <ProjectSummaryView
-            summaries={summaries}
-            currentUser={currentUser}
-            onOpenNewSummary={handleOpenNewSummary}
-            onOpenEditSummary={handleOpenEditSummary}
-            onDeleteSummary={handleDeleteSummary}
-            onPrintSummaryMemo={handlePrintSummaryMemo}
-          />
+          <>
+            {/* iOS 26 Permission & Scope Banner */}
+            {!isPrivileged ? (
+              <div className="mb-6 p-4 rounded-[22px] bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-500/25 backdrop-blur-xl shadow-[0_4px_20px_rgba(245,158,11,0.06)] flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-[14px] bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
+                    <Lock className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-slate-900 text-xs">
+                        มุมมองเฉพาะส่วนที่รับผิดชอบ: <span className="text-amber-800 underline decoration-amber-400 font-extrabold">{currentUser.department}</span>
+                      </span>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold border border-amber-200">
+                        {currentUser.role === 'department_head' ? 'หัวหน้างาน/ภาควิชา' : 'ผู้รับผิดชอบโครงการ'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      ท่านสามารถมองเห็น ตรวจสอบงบประมาณ และจัดการได้เฉพาะโครงการในส่วนที่ตนเองรับผิดชอบเท่านั้น (พบ {visibleProjects.length} โครงการ)
+                    </p>
+                  </div>
+                </div>
+                <div className="text-[11px] text-amber-800 bg-white/80 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-amber-200 self-start md:self-auto shrink-0 shadow-2xs font-medium">
+                  สิทธิ์ภาพรวมสงวนเฉพาะ: เจ้าหน้าที่งานแผน • ผู้บริหาร • Super Admin
+                </div>
+              </div>
+            ) : (
+              <div className="mb-5 px-4 py-2 rounded-full bg-indigo-500/8 border border-indigo-500/20 backdrop-blur-md flex items-center justify-between gap-2 text-[11px] text-indigo-900 font-medium">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span><strong>สิทธิ์ภาพรวมระดับคณะ (Full Faculty Access):</strong> ท่านกำลังเข้าใช้งานในฐานะ <strong>{currentUser.displayName}</strong> ({currentUser.role === 'admin' ? 'Super Admin' : currentUser.role === 'executive' ? 'ผู้บริหาร' : 'เจ้าหน้าที่งานแผน'}) สามารถดูและจัดการได้ทุกหน่วยงาน</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold shrink-0">
+                  ทั้งหมด {projects.length} โครงการ
+                </span>
+              </div>
+            )}
+
+            {activeTab === 'dashboard' ? (
+              <>
+                {/* Top Financial KPI Metrics */}
+                <OverviewStats 
+                  projects={visibleProjects} 
+                  period={currentPeriod} 
+                />
+
+                {/* Strategic Marketing Engine (User Request) */}
+                <MarketingInsights 
+                  projects={visibleProjects} 
+                />
+
+                {/* Proportions by Fund, Group, and Type */}
+                <CategoryChart 
+                  projects={visibleProjects} 
+                  period={currentPeriod} 
+                />
+
+                {/* 10 Departments & Branches View */}
+                <DepartmentView 
+                  projects={visibleProjects}
+                  onSelectDepartment={(dept) => setSelectedDept(dept)}
+                  selectedDept={selectedDept}
+                />
+
+                {/* Comprehensive Project Milestones & 15-Round Tracker */}
+                <ProjectTracker
+                  projects={visibleProjects}
+                  period={currentPeriod}
+                  selectedDept={selectedDept}
+                  onSelectDept={(dept) => setSelectedDept(dept)}
+                  onOpenDisbursement={(p) => {
+                    setSelectedProjectForAction(p || null);
+                    setIsDisbursementOpen(true);
+                  }}
+                  onOpenTransfer={(p) => {
+                    setSelectedProjectForAction(p || null);
+                    setIsTransferOpen(true);
+                  }}
+                  onOpenSummary={(p) => {
+                    setSelectedProjectForAction(p);
+                    // Prepopulate or search if existing summary
+                    const existing = summaries.find(s => s.projectId === p.id);
+                    setSummaryToEdit(existing || null);
+                    setIsSummaryModalOpen(true);
+                  }}
+                  currentUser={currentUser}
+                />
+              </>
+            ) : (
+              /* Project Completion Summary Vault (User Request #4) */
+              <ProjectSummaryView
+                summaries={visibleSummaries}
+                currentUser={currentUser}
+                onOpenNewSummary={handleOpenNewSummary}
+                onOpenEditSummary={handleOpenEditSummary}
+                onDeleteSummary={handleDeleteSummary}
+                onPrintSummaryMemo={handlePrintSummaryMemo}
+              />
+            )}
+          </>
         )}
       </main>
 
@@ -467,21 +607,21 @@ export default function App() {
       <DisbursementModal
         isOpen={isDisbursementOpen}
         onClose={() => setIsDisbursementOpen(false)}
-        projects={projects}
+        projects={visibleProjects}
         defaultProject={selectedProjectForAction}
         onSaveDisbursement={handleSaveDisbursement}
-        currentUser={currentUser}
+        currentUser={currentUser || members[0]}
       />
 
       <TransferModal
         isOpen={isTransferOpen}
         onClose={() => setIsTransferOpen(false)}
-        projects={projects}
+        projects={visibleProjects}
         defaultProject={selectedProjectForAction}
         config={config}
-        currentUser={currentUser}
+        currentUser={currentUser || members[0]}
         onExecuteTransfer={handleExecuteTransfer}
-        transfers={transfers}
+        transfers={visibleTransfers}
       />
 
       <UserManagementModal
@@ -498,6 +638,7 @@ export default function App() {
           setAuthMode('register');
           setIsAuthOpen(true);
         }}
+        onLogout={handleLogout}
       />
 
       {/* iOS 26 Authentication & Self-Registration Modal */}
@@ -508,6 +649,7 @@ export default function App() {
         members={members}
         onLogin={handleLoginUser}
         onRegister={handleRegisterUser}
+        onLogout={handleLogout}
         initialMode={authMode}
       />
 
@@ -532,8 +674,8 @@ export default function App() {
       <ExecutiveReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
-        projects={projects}
-        transfers={transfers}
+        projects={visibleProjects}
+        transfers={visibleTransfers}
         config={config}
       />
 
@@ -541,11 +683,11 @@ export default function App() {
       <ProjectSummaryModal
         isOpen={isSummaryModalOpen}
         onClose={() => setIsSummaryModalOpen(false)}
-        projects={projects}
+        projects={visibleProjects}
         defaultProject={selectedProjectForAction}
         summaryToEdit={summaryToEdit}
         onSaveSummary={handleSaveSummary}
-        currentUser={currentUser}
+        currentUser={currentUser || members[0]}
       />
 
       {/* Official Project Summary Printable Memo Modal */}

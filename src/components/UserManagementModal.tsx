@@ -11,7 +11,8 @@ import {
   User,
   Trash2,
   KeyRound,
-  ShieldAlert
+  ShieldAlert,
+  LogOut
 } from 'lucide-react';
 import { AppMember, UserRole, FACULTY_DEPARTMENTS } from '../types/budget';
 
@@ -19,12 +20,13 @@ interface UserManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   members: AppMember[];
-  currentUser: AppMember;
+  currentUser: AppMember | null;
   onSwitchUser: (member: AppMember) => void;
   onAddMember: (member: Omit<AppMember, 'id' | 'createdAt'>) => void;
   onUpdateMember: (member: AppMember) => void;
   onDeleteMember: (id: string) => void;
   onOpenRegister?: () => void;
+  onLogout?: () => void;
 }
 
 export const UserManagementModal: React.FC<UserManagementModalProps> = ({
@@ -37,6 +39,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   onUpdateMember,
   onDeleteMember,
   onOpenRegister,
+  onLogout,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -133,15 +136,37 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <div>
                 <div className="text-[11px] text-slate-500 font-medium">เข้าใช้งานปัจจุบันในฐานะ:</div>
                 <div className="text-xs font-bold text-slate-900">
-                  {currentUser.displayName} ({currentUser.email})
+                  {currentUser ? `${currentUser.displayName} (${currentUser.email})` : 'ยังไม่ได้เข้าสู่ระบบ (Guest / ไม่พบเซสชัน)'}
                 </div>
               </div>
             </div>
 
-            <div className="text-xs">
-              <span className="px-2.5 py-1 rounded-md bg-purple-100 text-purple-800 font-semibold border border-purple-200">
-                {getRoleLabel(currentUser.role)}
-              </span>
+            <div className="flex items-center gap-2">
+              {currentUser ? (
+                <>
+                  <span className="px-2.5 py-1 rounded-md bg-purple-100 text-purple-800 font-semibold border border-purple-200 text-xs">
+                    {getRoleLabel(currentUser.role)}
+                  </span>
+                  {onLogout && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onLogout();
+                        onClose();
+                      }}
+                      className="px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                      title="ออกจากระบบทันที"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>ออกจากระบบ</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                <span className="px-2.5 py-1 rounded-md bg-slate-200 text-slate-700 font-semibold text-xs">
+                  ยังไม่ได้ล็อกอิน
+                </span>
+              )}
             </div>
           </div>
 
@@ -161,7 +186,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     <span>หน้าสมัครสมาชิกใหม่</span>
                   </button>
                 )}
-                {currentUser.role === 'admin' && (
+                {currentUser?.role === 'admin' && (
                   <button
                     onClick={() => setIsAdding(true)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
@@ -371,7 +396,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           {/* Members List */}
           <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
             {members.map((member) => {
-              const isCurrent = currentUser.id === member.id;
+              const isCurrent = currentUser?.id === member.id;
 
               return (
                 <div 
@@ -393,9 +418,25 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             {member.displayName}
                           </span>
                           {isCurrent && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700 font-bold">
-                              กำลังใช้งาน
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700 font-bold">
+                                กำลังใช้งาน
+                              </span>
+                              {onLogout && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onLogout();
+                                    onClose();
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold border border-rose-200 transition cursor-pointer"
+                                  title="ออกจากระบบสำหรับบัญชีนี้"
+                                >
+                                  <LogOut className="w-2.5 h-2.5" />
+                                  <span>ออกจากระบบ</span>
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                         <div className="text-[11px] text-slate-500">
@@ -419,7 +460,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         {member.role}
                       </span>
 
-                      {currentUser.role === 'admin' && member.email !== 'kittisakpku@gmail.com' && (
+                      {currentUser?.role === 'admin' && member.email !== 'kittisakpku@gmail.com' && (
                         <button
                           onClick={() => onDeleteMember(member.id)}
                           className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer"

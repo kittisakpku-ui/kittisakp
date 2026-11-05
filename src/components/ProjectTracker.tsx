@@ -4,7 +4,9 @@ import {
   TimePeriodFilter, 
   DisbursementRound, 
   AppMember,
-  FACULTY_DEPARTMENTS
+  FACULTY_DEPARTMENTS,
+  isPrivilegedViewer,
+  isUserResponsibleForProject
 } from '../types/budget';
 import { 
   Search, 
@@ -20,7 +22,8 @@ import {
   Download,
   Eye,
   ExternalLink,
-  FileCheck2
+  FileCheck2,
+  Lock
 } from 'lucide-react';
 
 interface ProjectTrackerProps {
@@ -157,12 +160,19 @@ export const ProjectTracker: React.FC<ProjectTrackerProps> = ({
           <select
             value={selectedDept || ''}
             onChange={(e) => onSelectDept(e.target.value)}
-            className="text-xs bg-white/90 border border-black/[0.08] rounded-full px-3.5 py-2 text-slate-800 focus:ring-2 focus:ring-[#007AFF] shadow-2xs cursor-pointer font-medium"
+            disabled={!isPrivilegedViewer(currentUser)}
+            className={`text-xs bg-white/90 border border-black/[0.08] rounded-full px-3.5 py-2 text-slate-800 focus:ring-2 focus:ring-[#007AFF] shadow-2xs font-medium ${!isPrivilegedViewer(currentUser) ? 'cursor-not-allowed bg-slate-100/90 text-slate-600' : 'cursor-pointer'}`}
           >
-            <option value="">ทุกหน่วยงาน / ทุกภาควิชา ({FACULTY_DEPARTMENTS.length} หน่วยงาน)</option>
-            {FACULTY_DEPARTMENTS.map((dept) => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
+            {isPrivilegedViewer(currentUser) ? (
+              <>
+                <option value="">ทุกหน่วยงาน / ทุกภาควิชา ({FACULTY_DEPARTMENTS.length} หน่วยงาน)</option>
+                {FACULTY_DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </>
+            ) : (
+              <option value={currentUser.department}>เฉพาะหน่วยงานที่รับผิดชอบ: {currentUser.department}</option>
+            )}
           </select>
 
           {/* Status Filter */}
@@ -275,33 +285,39 @@ export const ProjectTracker: React.FC<ProjectTrackerProps> = ({
                         {getStatusBadge(proj)}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {onOpenSummary && (
-                            <button
-                              onClick={() => onOpenSummary(proj)}
-                              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition cursor-pointer"
-                              title="บันทึกสรุปโครงการที่เสร็จสิ้น"
-                            >
-                              <FileCheck2 className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => onOpenDisbursement(proj)}
-                            disabled={!currentUser.canRecordExpense}
-                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-md transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="บันทึกการขอใช้เงิน"
-                          >
-                            <PlusCircle className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => onOpenTransfer(proj)}
-                            disabled={!currentUser.canTransfer}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="โอนงบประมาณ"
-                          >
-                            <ArrowLeftRight className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {(() => {
+                          const isResponsible = isUserResponsibleForProject(currentUser, proj);
+                          return (
+                            <div className="flex items-center justify-center gap-1">
+                              {onOpenSummary && (
+                                <button
+                                  onClick={() => onOpenSummary(proj)}
+                                  disabled={!isResponsible}
+                                  className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-md transition cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed"
+                                  title={isResponsible ? 'บันทึกสรุปโครงการที่เสร็จสิ้น' : 'ท่านไม่มีสิทธิ์จัดการโครงการนอกส่วนที่ตนเองรับผิดชอบ'}
+                                >
+                                  <FileCheck2 className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => onOpenDisbursement(proj)}
+                                disabled={!currentUser.canRecordExpense || !isResponsible}
+                                className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-md transition cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed"
+                                title={!isResponsible ? 'ท่านไม่มีสิทธิ์จัดการโครงการนอกส่วนที่ตนเองรับผิดชอบ' : currentUser.canRecordExpense ? 'บันทึกการขอใช้เงิน' : 'ท่านไม่มีสิทธิ์บันทึกการใช้เงิน'}
+                              >
+                                <PlusCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => onOpenTransfer(proj)}
+                                disabled={!currentUser.canTransfer || !isResponsible}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed"
+                                title={!isResponsible ? 'ท่านไม่มีสิทธิ์จัดการโครงการนอกส่วนที่ตนเองรับผิดชอบ' : currentUser.canTransfer ? 'โอนงบประมาณ' : 'ท่านไม่มีสิทธิ์โอนงบ'}
+                              >
+                                <ArrowLeftRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
 
