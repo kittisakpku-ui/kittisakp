@@ -695,6 +695,7 @@ export default function App() {
         projects={visibleProjects}
         transfers={visibleTransfers}
         config={config}
+        members={members}
       />
 
       {/* Project Completion Summary Form Modal */}
