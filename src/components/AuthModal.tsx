@@ -12,7 +12,6 @@ import {
   EyeOff, 
   CheckCircle2, 
   AlertCircle,
-  KeyRound,
   ArrowRight,
   LogOut
 } from 'lucide-react';
@@ -253,11 +252,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleSelectAdminAccount = () => {
-    setLoginIdentifier('admin');
-    setLoginError('');
-  };
-
   return (
     <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
       <div className="bg-white rounded-[28px] max-w-md w-full shadow-[0_24px_70px_rgba(0,0,0,0.25)] border border-white/60 overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-200">
@@ -349,29 +343,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   )}
                 </div>
               )}
-
-              {/* Super Admin Notice without displaying password */}
-              <div className="p-3 rounded-2xl bg-[#007AFF]/8 border border-[#007AFF]/20 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#007AFF] flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span>บัญชีผู้ดูแลระบบ (Super Admin)</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginIdentifier('admin');
-                      setLoginError('');
-                    }}
-                    className="text-[11px] font-semibold text-[#007AFF] hover:underline cursor-pointer"
-                  >
-                    กรอกชื่อบัญชี Admin
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  ชื่อบัญชี: <code className="font-mono bg-white px-1.5 py-0.5 rounded text-slate-800">admin</code> หรืออีเมล • รหัสผ่านถูกปกปิดเพื่อความปลอดภัย กรุณากรอกรหัสผ่านของท่าน
-                </p>
-              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">

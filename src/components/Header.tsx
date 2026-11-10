@@ -15,7 +15,8 @@ import {
   LayoutDashboard,
   UserPlus,
   LogIn,
-  LogOut
+  LogOut,
+  Share2
 } from 'lucide-react';
 import { TimePeriodFilter, AppMember } from '../types/budget';
 
@@ -64,6 +65,17 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing,
   onSyncNow,
 }) => {
+  const [copiedShare, setCopiedShare] = React.useState(false);
+
+  const handleShare = () => {
+    const shareUrl = window.location.origin;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl);
+    }
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2500);
+  };
+
   return (
     <header className="bg-white/75 backdrop-blur-2xl border-b border-black/[0.06] sticky top-0 z-30 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] transition-all">
       {/* Top Banner */}
@@ -91,6 +103,16 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Quick Status & Actions */}
           <div className="flex items-center flex-wrap gap-2">
+            {/* Share Link Button */}
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-sky-300 bg-sky-50/90 hover:bg-sky-100 text-sky-800 text-xs font-semibold transition active:scale-95 cursor-pointer shadow-2xs backdrop-blur-xs"
+              title="คัดลอกลิงก์สำหรับแชร์ให้สมาชิกในคณะใช้งาน"
+            >
+              <Share2 className="w-3.5 h-3.5 text-sky-600" />
+              <span>{copiedShare ? '✓ คัดลอกลิงก์แล้ว!' : 'แชร์ลิงก์ระบบ'}</span>
+            </button>
+
             {/* Google Sheets Connector Button */}
             <button
               onClick={onOpenConnector}
