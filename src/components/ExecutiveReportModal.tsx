@@ -17,7 +17,7 @@ import {
   ChevronUp,
   Sparkles
 } from 'lucide-react';
-import { BudgetProject, BudgetTransferRecord, SystemConfig, AppMember } from '../types/budget';
+import { BudgetProject, BudgetTransferRecord, SystemConfig, AppMember, normalizeDepartment } from '../types/budget';
 
 export interface ReportSignatory {
   id: string;
@@ -32,35 +32,60 @@ export interface ReportSignatory {
 const STORAGE_KEY_SIGNATORIES = 'socsci_executive_report_signatories_2570';
 const STORAGE_KEY_REPORT_DATE = 'socsci_executive_report_date_2570';
 
-const DEFAULT_SIGNATORIES: ReportSignatory[] = [
-  {
-    id: 'sig-1',
-    roleLabel: 'ผู้จัดทำและรายงานข้อมูล',
-    name: 'นางสาวพชรวรรธน์ แก้วมณี',
-    position: 'เจ้าหน้าที่การเงินและงบประมาณ',
-    subPosition: 'งานยุทธศาสตร์และบุคคล',
-    dateText: '',
-    enabled: true,
-  },
-  {
-    id: 'sig-2',
-    roleLabel: 'ผู้ตรวจสอบ / กำกับดูแลงานแผน',
-    name: 'รองศาสตราจารย์ ดร.วัชรพล พุทธรักษา',
-    position: 'รองคณบดีฝ่ายวิจัยและบริการวิชาการ',
-    subPosition: 'ปฏิบัติหน้าที่กำกับดูแลงานแผนและงบประมาณ',
-    dateText: '',
-    enabled: true,
-  },
-  {
-    id: 'sig-3',
-    roleLabel: 'ผู้บริหารสูงสุด / คณบดีคณะสังคมศาสตร์',
-    name: 'รองศาสตราจารย์ ดร.วัชรพล พุทธรักษา',
-    position: 'คณบดีคณะสังคมศาสตร์',
-    subPosition: 'มหาวิทยาลัยนเรศวร',
-    dateText: '',
-    enabled: true,
-  },
-];
+/**
+ * กำหนดผู้ลงนามเริ่มต้นตามบัญชีที่ลงทะเบียนไว้จริงในระบบ (ไม่ใส่ชื่อมั่ว)
+ */
+export const getDefaultRegisteredSignatories = (membersList: AppMember[] = []): ReportSignatory[] => {
+  // 1. ผู้จัดทำและรายงานข้อมูล: คุณกมลรัตน์ เฟื่องปรางค์ (เจ้าหน้าที่การเงินและงบประมาณ)
+  const preparer = 
+    membersList.find(m => m.email === 'kamonratf@nu.ac.th' || (m.username && m.username.toLowerCase() === 'kamonratf')) ||
+    membersList.find(m => m.role === 'finance_officer') ||
+    membersList.find(m => m.department === 'งานการเงิน' || m.department === 'งานยุทธศาสตร์และบุคคล') ||
+    membersList[0];
+
+  // 2. ผู้ตรวจสอบ / กำกับดูแลงานแผน: คุณพชรวรรธน์ นลินรัตนกุล (หัวหน้างานยุทธศาสตร์และบุคคล / งานแผน)
+  const supervisor = 
+    membersList.find(m => m.email === 'pacharawattn@nu.ac.th' || (m.username && m.username.toLowerCase() === 'pacharawattn')) ||
+    membersList.find(m => m.role === 'executive' && m.email !== 'watcharabonb@nu.ac.th' && m.id !== 'dean.socsci@nu.ac.th') ||
+    membersList.find(m => m.role === 'admin') ||
+    membersList[0];
+
+  // 3. ผู้บริหารสูงสุด / คณบดีคณะสังคมศาสตร์: รศ.ดร.วัชรพล พุทธรักษา (คณบดีคณะสังคมศาสตร์)
+  const dean = 
+    membersList.find(m => m.email === 'watcharabonb@nu.ac.th' || (m.username && m.username.toLowerCase() === 'watcharabonb') || m.id === 'dean.socsci@nu.ac.th') ||
+    membersList.find(m => m.role === 'executive') ||
+    membersList[0];
+
+  return [
+    {
+      id: 'sig-1',
+      roleLabel: 'ผู้จัดทำและรายงานข้อมูล',
+      name: preparer ? preparer.displayName : 'นางกมลรัตน์ เฟื่องปรางค์',
+      position: 'เจ้าหน้าที่การเงินและงบประมาณ',
+      subPosition: 'งานยุทธศาสตร์และบุคคล คณะสังคมศาสตร์',
+      dateText: '',
+      enabled: true,
+    },
+    {
+      id: 'sig-2',
+      roleLabel: 'ผู้ตรวจสอบ / กำกับดูแลงานแผน',
+      name: supervisor ? supervisor.displayName : 'นางพชรวรรธน์ นลินรัตนกุล',
+      position: 'หัวหน้างานยุทธศาสตร์และบุคคล',
+      subPosition: 'ผู้กำกับดูแลงานแผนและงบประมาณ คณะสังคมศาสตร์',
+      dateText: '',
+      enabled: true,
+    },
+    {
+      id: 'sig-3',
+      roleLabel: 'ผู้บริหารสูงสุด / คณบดีคณะสังคมศาสตร์',
+      name: dean ? dean.displayName : 'รศ.ดร.วัชรพล พุทธรักษา',
+      position: 'คณบดีคณะสังคมศาสตร์',
+      subPosition: 'มหาวิทยาลัยนเรศวร',
+      dateText: '',
+      enabled: true,
+    },
+  ];
+};
 
 interface ExecutiveReportModalProps {
   isOpen: boolean;
@@ -79,27 +104,59 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   config,
   members = [],
 }) => {
-  // Signatories State
+  // Signatories State: dynamically initialize from registered members and purge any legacy mock names
   const [signatories, setSignatories] = useState<ReportSignatory[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_SIGNATORIES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // If stored signatories contain obsolete mock names (เช่น แก้วมณี หรือชื่อมั่ว), purge and use registered
+          const hasDummy = parsed.some(s => 
+            s.name?.includes('แก้วมณี') || 
+            s.name?.includes('สมชาย') || 
+            !s.name || 
+            s.name.trim() === ''
+          );
+          if (!hasDummy) return parsed;
+        }
       }
     } catch (e) {
       console.warn('Could not read saved signatories', e);
     }
-    return DEFAULT_SIGNATORIES;
+    return getDefaultRegisteredSignatories(members);
   });
 
-  // Custom Report Date State
+  // When members update from server, update signatories if empty
+  useEffect(() => {
+    if (members.length > 0) {
+      setSignatories(prev => {
+        const hasDummy = prev.some(s => s.name?.includes('แก้วมณี') || s.name?.includes('สมชาย') || !s.name.trim());
+        if (hasDummy) {
+          const fresh = getDefaultRegisteredSignatories(members);
+          try {
+            localStorage.setItem(STORAGE_KEY_SIGNATORIES, JSON.stringify(fresh));
+          } catch (e) {}
+          return fresh;
+        }
+        return prev;
+      });
+    }
+  }, [members]);
+
+  // Report Date State with Arabic numerals
   const [reportDateText, setReportDateText] = useState<string>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_REPORT_DATE);
       if (saved) return saved;
     } catch (e) {}
-    return new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    // Format date in Arabic numerals e.g. "10 พฤศจิกายน 2570"
+    const now = new Date();
+    const months = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    return `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear() + 543}`;
   });
 
   const [isEditingSignatories, setIsEditingSignatories] = useState(false);
@@ -107,37 +164,41 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
   if (!isOpen) return null;
 
-  const totalAllocated = projects.reduce((s, p) => s + p.remainingBudget, 0);
-  const totalRequested = projects.reduce((s, p) => s + p.totalRequested, 0);
-  const totalActual = projects.reduce((s, p) => s + p.totalActualSpent, 0);
+  // Exact Financial Totals Reconciled
+  const totalAllocated = projects.reduce((s, p) => s + (p.remainingBudget || 0), 0);
+  const totalRequested = projects.reduce((s, p) => s + (p.totalRequested || 0), 0);
+  const totalActual = projects.reduce((s, p) => s + (p.totalActualSpent || 0), 0);
   const totalRemaining = totalAllocated - totalActual;
 
-  // Group by Fund
-  const fundMap: Record<string, { budget: number; requested: number; actual: number }> = {};
+  const pctRequested = totalAllocated > 0 ? ((totalRequested / totalAllocated) * 100).toFixed(1) : '0.0';
+  const pctActual = totalAllocated > 0 ? ((totalActual / totalAllocated) * 100).toFixed(1) : '0.0';
+  const pctRemaining = totalAllocated > 0 ? ((totalRemaining / totalAllocated) * 100).toFixed(1) : '0.0';
+
+  // Group by Fund with full totals
+  const fundMap: Record<string, { budget: number; requested: number; actual: number; remaining: number }> = {};
   projects.forEach((p) => {
-    const fKey = p.fund.trim();
-    if (!fundMap[fKey]) fundMap[fKey] = { budget: 0, requested: 0, actual: 0 };
-    fundMap[fKey].budget += p.remainingBudget;
-    fundMap[fKey].requested += p.totalRequested;
-    fundMap[fKey].actual += p.totalActualSpent;
+    const fKey = (p.fund || 'กองทุนทั่วไป').trim();
+    if (!fundMap[fKey]) fundMap[fKey] = { budget: 0, requested: 0, actual: 0, remaining: 0 };
+    fundMap[fKey].budget += (p.remainingBudget || 0);
+    fundMap[fKey].requested += (p.totalRequested || 0);
+    fundMap[fKey].actual += (p.totalActualSpent || 0);
+    fundMap[fKey].remaining += ((p.remainingBudget || 0) - (p.totalActualSpent || 0));
   });
 
-  // Group by Department
+  // Group by Department normalized
   const deptMap: Record<string, { budget: number; requested: number; actual: number; count: number }> = {};
   projects.forEach((p) => {
-    let dKey = p.department.trim();
-    if (dKey === 'งานวิจัยฯ') dKey = 'งานวิจัยและบริการวิชาการ';
-    if (dKey === 'งานพัฒนานิสิตฯ') dKey = 'งานกิจการนิสิตและศิษย์เก่าสัมพันธ์';
-    if (dKey === 'งานยุทธศาสตร์') dKey = 'งานยุทธศาสตร์และบุคคล';
+    const dKey = normalizeDepartment(p.department) || p.department.trim();
     if (!deptMap[dKey]) deptMap[dKey] = { budget: 0, requested: 0, actual: 0, count: 0 };
-    deptMap[dKey].budget += p.remainingBudget;
-    deptMap[dKey].requested += p.totalRequested;
-    deptMap[dKey].actual += p.totalActualSpent;
+    deptMap[dKey].budget += (p.remainingBudget || 0);
+    deptMap[dKey].requested += (p.totalRequested || 0);
+    deptMap[dKey].actual += (p.totalActualSpent || 0);
     deptMap[dKey].count += 1;
   });
 
+  // Number formatting in standard Arabic Numerals (เลขอาราบิก)
   const formatBaht = (amount: number) => {
-    return new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount);
   };
 
   const handlePrint = () => {
@@ -159,16 +220,20 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
     let roleTitle = 'เจ้าหน้าที่ผู้รับผิดชอบโครงการ';
     if (found.role === 'admin') roleTitle = 'ผู้ดูแลระบบและวิเคราะห์นโยบาย';
-    else if (found.role === 'executive') roleTitle = 'ผู้บริหาร คณะสังคมศาสตร์';
-    else if (found.role === 'finance_officer') roleTitle = 'เจ้าหน้าที่การเงินและงบประมาณ';
-    else if (found.role === 'department_head') roleTitle = `หัวหน้า${found.department}`;
+    else if (found.role === 'executive') {
+      roleTitle = found.email === 'watcharabonb@nu.ac.th' ? 'คณบดีคณะสังคมศาสตร์' : 'ผู้บริหาร คณะสังคมศาสตร์';
+    } else if (found.role === 'finance_officer') {
+      roleTitle = 'เจ้าหน้าที่การเงินและงบประมาณ';
+    } else if (found.role === 'department_head') {
+      roleTitle = `หัวหน้า${found.department}`;
+    }
 
     const updated = [...signatories];
     updated[index] = {
       ...updated[index],
       name: found.displayName,
       position: roleTitle,
-      subPosition: found.department,
+      subPosition: found.department === 'งานยุทธศาสตร์และบุคคล' ? 'งานยุทธศาสตร์และบุคคล คณะสังคมศาสตร์' : found.department,
     };
     setSignatories(updated);
     try {
@@ -203,9 +268,10 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   };
 
   const handleResetSignatories = () => {
-    setSignatories(DEFAULT_SIGNATORIES);
+    const fresh = getDefaultRegisteredSignatories(members);
+    setSignatories(fresh);
     try {
-      localStorage.setItem(STORAGE_KEY_SIGNATORIES, JSON.stringify(DEFAULT_SIGNATORIES));
+      localStorage.setItem(STORAGE_KEY_SIGNATORIES, JSON.stringify(fresh));
     } catch (e) {}
     setSaveToast(true);
     setTimeout(() => setSaveToast(false), 2000);
@@ -221,16 +287,16 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   const enabledSignatories = signatories.filter(s => s.enabled);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div className="executive-report-modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden my-4 sm:my-8 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
         
-        {/* Modal Controls (Not printed) */}
+        {/* Modal Controls (Hidden on Print) */}
         <div className="px-5 py-3.5 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 print:hidden">
           <div className="flex items-center gap-2">
             <Printer className="w-5 h-5 text-indigo-400 shrink-0" />
             <div>
               <h3 className="text-sm font-bold leading-tight">เอกสารรายงานผู้บริหาร (Executive Briefing Document)</h3>
-              <p className="text-[11px] text-slate-400">สามารถปรับแก้ชื่อและตำแหน่งผู้ลงนามได้ก่อนสั่งพิมพ์</p>
+              <p className="text-[11px] text-slate-400">เลขอาราบิกทั้งหมด • ข้อมูลถูกต้องตรงตามระบบ • ผู้ลงนามจากสมาชิกที่ลงทะเบียนไว้จริง</p>
             </div>
           </div>
           
@@ -282,11 +348,11 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
               <div className="flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-indigo-600" />
                 <h4 className="text-xs font-bold text-slate-900">
-                  ปรับแก้ไขข้อมูลผู้ลงนาม และวันที่รายงาน (Signatories Customization)
+                  ปรับแก้ไขข้อมูลผู้ลงนาม และวันที่รายงาน (อ้างอิงจากผู้ลงทะเบียนไว้ในระบบ)
                 </h4>
                 {saveToast && (
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold animate-pulse">
-                    ✓ คืนค่าเริ่มต้นเรียบร้อย
+                    ✓ คืนค่าตามผู้ลงทะเบียนเรียบร้อย
                   </span>
                 )}
               </div>
@@ -305,10 +371,10 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                   type="button"
                   onClick={handleResetSignatories}
                   className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                  title="คืนค่ารายชื่อผู้ลงนามเริ่มต้น"
+                  title="คืนค่ารายชื่อผู้ลงนามตามสมาชิกที่ลงทะเบียนไว้จริง"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>คืนค่าเริ่มต้น</span>
+                  <span>คืนค่าตามผู้ลงทะเบียน</span>
                 </button>
               </div>
             </div>
@@ -317,13 +383,13 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
             <div className="p-3 bg-white rounded-xl border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-1.5 font-semibold text-slate-800">
                 <Calendar className="w-3.5 h-3.5 text-indigo-600" />
-                <span>วันที่แสดงในหัวเอกสารรายงาน:</span>
+                <span>วันที่แสดงในหัวเอกสารรายงาน (เลขอาราบิก):</span>
               </div>
               <input
                 type="text"
                 value={reportDateText}
                 onChange={(e) => handleSaveDate(e.target.value)}
-                placeholder="เช่น ๙ พฤศจิกายน ๒๕๖๙ หรือ 9 พฤศจิกายน 2569"
+                placeholder="เช่น 10 พฤศจิกายน 2570"
                 className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-80"
               />
             </div>
@@ -377,11 +443,11 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                       />
                     </div>
 
-                    {/* Member Fast Picker */}
+                    {/* Member Fast Picker (strictly from registered members) */}
                     {members.length > 0 && (
                       <div>
                         <label className="block text-[10px] font-semibold text-indigo-700 mb-0.5">
-                          ดึงข้อมูลจากบุคลากรในระบบ:
+                          เลือกจากสมาชิกที่ลงทะเบียนไว้:
                         </label>
                         <select
                           onChange={(e) => {
@@ -390,7 +456,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                           defaultValue=""
                           className="w-full text-[11px] px-2 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/50 text-slate-800 cursor-pointer"
                         >
-                          <option value="" disabled>-- เลือกเพื่อเติมชื่ออัตโนมัติ --</option>
+                          <option value="" disabled>-- เลือกชื่อสมาชิกที่ลงทะเบียน --</option>
                           {members.map(m => (
                             <option key={m.id} value={m.id}>
                               {m.displayName} ({m.department})
@@ -409,7 +475,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                         type="text"
                         value={sig.name}
                         onChange={(e) => handleUpdateSignatory(idx, 'name', e.target.value)}
-                        placeholder="เช่น นางสาวพชรวรรธน์ แก้วมณี"
+                        placeholder="กรอกชื่อ-นามสกุล"
                         className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
@@ -448,12 +514,12 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           </div>
         )}
 
-        {/* Printable Paper Document Container */}
-        <div className="p-8 sm:p-12 overflow-y-auto flex-1 font-['Sarabun',sans-serif] text-slate-900 print:p-0 print:overflow-visible">
+        {/* Printable Paper Document Container (Matches Print exactly) */}
+        <div className="executive-report-paper-document p-8 sm:p-12 overflow-y-auto flex-1 font-['Sarabun',sans-serif] text-slate-900 bg-white print:p-0 print:overflow-visible">
           
           {/* Header Memo Style */}
-          <div className="text-center pb-6 border-b-2 border-slate-900 space-y-1">
-            <div className="text-lg font-bold tracking-tight text-slate-900 uppercase">
+          <div className="text-center pb-5 border-b-2 border-slate-900 space-y-1">
+            <div className="text-xl font-bold tracking-tight text-slate-900 uppercase">
               บันทึกข้อความ
             </div>
             <div className="text-sm font-bold text-slate-800">
@@ -463,108 +529,133 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
               รายงานผลการบริหารจัดการและติดตามงบประมาณหมวดเงินอุดหนุนตามการจัดสรรเงินรายได้
             </h1>
             <div className="text-xs text-slate-600">
-              ประจำปีงบประมาณ พ.ศ. 2570 (ตั้งจากประมาณการรายรับ) | ข้อมูล ณ {reportDateText}
+              ประจำปีงบประมาณ พ.ศ. 2570 (ตั้งจากประมาณการรายรับ) | ข้อมูล ณ วันที่ {reportDateText}
             </div>
           </div>
 
           {/* Section 1: Executive Summary */}
-          <div className="mt-6 space-y-3">
+          <div className="mt-5 space-y-3">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-              <span>๑. สรุปภาพรวมสถานะงบประมาณและการเบิกจ่าย</span>
+              <span>1. สรุปภาพรวมสถานะงบประมาณและการเบิกจ่าย</span>
             </h2>
             <p className="text-xs text-slate-700 leading-relaxed text-justify indent-8">
-              คณะสังคมศาสตร์ได้รับการจัดสรรงบประมาณหมวดเงินอุดหนุนตามการจัดสรรเงินรายได้ ประจำปีงบประมาณ พ.ศ. ๒๕๗๐ รวมทั้งสิ้นเป็นเงิน <strong>{formatBaht(totalAllocated)} บาท</strong> จาก ๖ กองทุน ครอบคลุมหน่วยงานและภาควิชา โดยมีผลการดำเนินงานและการเบิกจ่ายงบประมาณ ดังนี้:
+              คณะสังคมศาสตร์ได้รับการจัดสรรงบประมาณหมวดเงินอุดหนุนตามการจัดสรรเงินรายได้ ประจำปีงบประมาณ พ.ศ. 2570 รวมทั้งสิ้นเป็นเงิน <strong>{formatBaht(totalAllocated)} บาท</strong> จาก {Object.keys(fundMap).length} กองทุน รวม {projects.length} โครงการ ครอบคลุม {Object.keys(deptMap).length} หน่วยงานและภาควิชา โดยมีผลการดำเนินงานและการเบิกจ่ายงบประมาณ ดังนี้:
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-3">
-              <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-center">
+              <div className="p-3 bg-slate-50 border border-slate-400 rounded-lg text-center">
                 <span className="text-[11px] text-slate-600 block">งบประมาณจัดสรรสุทธิ</span>
                 <span className="text-sm font-extrabold text-slate-900">฿{formatBaht(totalAllocated)}</span>
+                <span className="text-[10px] text-slate-500 block mt-0.5">100.0%</span>
               </div>
-              <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-center">
+              <div className="p-3 bg-slate-50 border border-slate-400 rounded-lg text-center">
                 <span className="text-[11px] text-slate-600 block">รวมขอค่าใช้จ่าย</span>
-                <span className="text-sm font-bold text-slate-900">฿{formatBaht(totalRequested)} ({((totalRequested/totalAllocated)*100).toFixed(1)}%)</span>
+                <span className="text-sm font-bold text-slate-900">฿{formatBaht(totalRequested)}</span>
+                <span className="text-[10px] text-blue-700 font-semibold block mt-0.5">{pctRequested}% ของงบจัดสรร</span>
               </div>
-              <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-center">
-                <span className="text-[11px] text-slate-600 block">เบิกจ่ายจริง / ส่งสรุปแล้ว</span>
-                <span className="text-sm font-bold text-slate-900">฿{formatBaht(totalActual)} ({((totalActual/totalAllocated)*100).toFixed(1)}%)</span>
+              <div className="p-3 bg-slate-50 border border-slate-400 rounded-lg text-center">
+                <span className="text-[11px] text-slate-600 block">เบิกจ่ายจริง / สรุปแล้ว</span>
+                <span className="text-sm font-bold text-slate-900">฿{formatBaht(totalActual)}</span>
+                <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">{pctActual}% ของงบจัดสรร</span>
               </div>
-              <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg text-center">
+              <div className="p-3 bg-slate-50 border border-slate-400 rounded-lg text-center">
                 <span className="text-[11px] text-slate-600 block">งบประมาณคงเหลือจริง</span>
                 <span className="text-sm font-extrabold text-slate-900">฿{formatBaht(totalRemaining)}</span>
+                <span className="text-[10px] text-slate-700 font-semibold block mt-0.5">{pctRemaining}% ของงบจัดสรร</span>
               </div>
             </div>
           </div>
 
-          {/* Section 2: Fund Breakdown */}
-          <div className="mt-6 space-y-3">
+          {/* Section 2: Fund Breakdown with Table Footer Totals */}
+          <div className="mt-5 space-y-2.5">
             <h2 className="text-sm font-bold text-slate-900">
-              <span>๒. สรุปการจัดสรรงบประมาณจำแนกตามกองทุน</span>
+              <span>2. สรุปการจัดสรรงบประมาณจำแนกตามกองทุน ({Object.keys(fundMap).length} กองทุน)</span>
             </h2>
-            <table className="w-full text-xs text-left border border-slate-300 border-collapse">
+            <table className="w-full text-xs text-left border border-slate-400 border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
-                  <th className="p-2 border-r border-slate-300">กองทุน</th>
-                  <th className="p-2 text-right border-r border-slate-300">งบประมาณจัดสรร (บาท)</th>
-                  <th className="p-2 text-right border-r border-slate-300">ขอใช้เงินแล้ว (บาท)</th>
-                  <th className="p-2 text-right border-r border-slate-300">เบิกจ่ายจริง (บาท)</th>
-                  <th className="p-2 text-right">คงเหลือสุทธิ (บาท)</th>
+                <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-400">
+                  <th className="p-2 border border-slate-300">กองทุน</th>
+                  <th className="p-2 text-right border border-slate-300">งบจัดสรร (บาท)</th>
+                  <th className="p-2 text-right border border-slate-300">ขอใช้เงินแล้ว (บาท)</th>
+                  <th className="p-2 text-right border border-slate-300">เบิกจ่ายจริง (บาท)</th>
+                  <th className="p-2 text-right border border-slate-300">คงเหลือสุทธิ (บาท)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {Object.entries(fundMap).map(([fName, val], idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 font-medium border-r border-slate-300">{fName}</td>
-                    <td className="p-2 text-right border-r border-slate-300 font-semibold">{formatBaht(val.budget)}</td>
-                    <td className="p-2 text-right border-r border-slate-300">{formatBaht(val.requested)}</td>
-                    <td className="p-2 text-right border-r border-slate-300">{formatBaht(val.actual)}</td>
-                    <td className="p-2 text-right font-bold">{formatBaht(val.budget - val.actual)}</td>
+                  <tr key={idx} className="hover:bg-slate-50">
+                    <td className="p-2 font-medium border border-slate-300">{fName}</td>
+                    <td className="p-2 text-right border border-slate-300">{formatBaht(val.budget)}</td>
+                    <td className="p-2 text-right border border-slate-300">{formatBaht(val.requested)}</td>
+                    <td className="p-2 text-right border border-slate-300">{formatBaht(val.actual)}</td>
+                    <td className="p-2 text-right font-semibold border border-slate-300">{formatBaht(val.remaining)}</td>
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="bg-slate-100 font-bold border-t-2 border-slate-400 text-slate-900">
+                  <td className="p-2 border border-slate-300 text-center">รวมทั้งสิ้น</td>
+                  <td className="p-2 text-right border border-slate-300 font-extrabold">{formatBaht(totalAllocated)}</td>
+                  <td className="p-2 text-right border border-slate-300">{formatBaht(totalRequested)}</td>
+                  <td className="p-2 text-right border border-slate-300">{formatBaht(totalActual)}</td>
+                  <td className="p-2 text-right border border-slate-300 font-extrabold">{formatBaht(totalRemaining)}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
-          {/* Section 3: Department Breakdown */}
-          <div className="mt-6 space-y-3">
+          {/* Section 3: Department Breakdown with Table Footer Totals */}
+          <div className="mt-5 space-y-2.5">
             <h2 className="text-sm font-bold text-slate-900">
-              <span>๓. สรุปการจัดสรรและผลการดำเนินงานจำแนกตามหน่วยงาน & สาขาวิชา</span>
+              <span>3. สรุปการจัดสรรและผลการดำเนินงานจำแนกตามหน่วยงานและภาควิชา ({Object.keys(deptMap).length} หน่วยงาน)</span>
             </h2>
-            <table className="w-full text-xs text-left border border-slate-300 border-collapse">
+            <table className="w-full text-xs text-left border border-slate-400 border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
-                  <th className="p-2 border-r border-slate-300">หน่วยงาน / ภาควิชา</th>
-                  <th className="p-2 text-center border-r border-slate-300 w-16">โครงการ</th>
-                  <th className="p-2 text-right border-r border-slate-300">งบจัดสรร (บาท)</th>
-                  <th className="p-2 text-right border-r border-slate-300">ขอใช้เงิน (บาท)</th>
-                  <th className="p-2 text-right">ใช้จริง (บาท)</th>
+                <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-400">
+                  <th className="p-2 border border-slate-300">หน่วยงาน / ภาควิชา</th>
+                  <th className="p-2 text-center border border-slate-300 w-20">โครงการ</th>
+                  <th className="p-2 text-right border border-slate-300">งบจัดสรร (บาท)</th>
+                  <th className="p-2 text-right border border-slate-300">ขอใช้เงิน (บาท)</th>
+                  <th className="p-2 text-right border border-slate-300">ใช้จริง (บาท)</th>
+                  <th className="p-2 text-right border border-slate-300">คงเหลือ (บาท)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {Object.entries(deptMap).map(([dName, val], idx) => (
-                  <tr key={idx}>
-                    <td className="p-2 font-medium border-r border-slate-300">{dName}</td>
-                    <td className="p-2 text-center border-r border-slate-300">{val.count}</td>
-                    <td className="p-2 text-right border-r border-slate-300 font-semibold">{formatBaht(val.budget)}</td>
-                    <td className="p-2 text-right border-r border-slate-300">{formatBaht(val.requested)}</td>
-                    <td className="p-2 text-right font-bold">{formatBaht(val.actual)}</td>
+                  <tr key={idx} className="hover:bg-slate-50">
+                    <td className="p-2 font-medium border border-slate-300">{dName}</td>
+                    <td className="p-2 text-center border border-slate-300">{val.count}</td>
+                    <td className="p-2 text-right border border-slate-300">{formatBaht(val.budget)}</td>
+                    <td className="p-2 text-right border border-slate-300">{formatBaht(val.requested)}</td>
+                    <td className="p-2 text-right border border-slate-300">{formatBaht(val.actual)}</td>
+                    <td className="p-2 text-right font-semibold border border-slate-300">{formatBaht(val.budget - val.actual)}</td>
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="bg-slate-100 font-bold border-t-2 border-slate-400 text-slate-900">
+                  <td className="p-2 border border-slate-300 text-center">รวมทั้งสิ้น</td>
+                  <td className="p-2 text-center border border-slate-300">{projects.length}</td>
+                  <td className="p-2 text-right border border-slate-300 font-extrabold">{formatBaht(totalAllocated)}</td>
+                  <td className="p-2 text-right border border-slate-300">{formatBaht(totalRequested)}</td>
+                  <td className="p-2 text-right border border-slate-300">{formatBaht(totalActual)}</td>
+                  <td className="p-2 text-right border border-slate-300 font-extrabold">{formatBaht(totalRemaining)}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
           {/* Section 4: Budget Transfers */}
-          <div className="mt-6 space-y-2">
+          <div className="mt-5 space-y-2">
             <h2 className="text-sm font-bold text-slate-900">
-              <span>๔. รายการโอนเงินงบประมาณระหว่างหมวด (Inter-Budget Transfers)</span>
+              <span>4. รายการโอนเงินงบประมาณระหว่างหมวด (Inter-Budget Transfers)</span>
             </h2>
             <p className="text-xs text-slate-700 leading-relaxed indent-8">
               มีการโอนงบประมาณระหว่างโครงการตามความจำเป็นเร่งด่วน โดยผ่านการอนุมัติตามระเบียบและไม่เกินโควตา {config.maxTransfersAllowed} ครั้งที่กำหนด รวมทั้งสิ้น {transfers.length} รายการ:
             </p>
             <div className="space-y-1.5 text-xs text-slate-800 pl-4 border-l-2 border-slate-300">
               {transfers.length === 0 ? (
-                <div className="text-slate-500 italic">ไม่มีรายการโอนเปลี่ยนแปลงงบประมาณ</div>
+                <div className="text-slate-500 italic">ไม่มีรายการโอนเปลี่ยนแปลงงบประมาณในรอบการรายงานนี้</div>
               ) : (
                 transfers.map((tr, idx) => (
                   <div key={idx} className="leading-snug">
@@ -575,31 +666,31 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
             </div>
           </div>
 
-          {/* Section 5: Strategic & Marketing Recommendations */}
-          <div className="mt-6 space-y-2">
+          {/* Section 5: Strategic Recommendations */}
+          <div className="mt-5 space-y-2">
             <h2 className="text-sm font-bold text-slate-900">
-              <span>๕. ข้อเสนอแนะเชิงกลยุทธ์และการตลาดเพื่อการตัดสินใจของผู้บริหาร</span>
+              <span>5. ข้อเสนอแนะเชิงกลยุทธ์เพื่อการบริหารงบประมาณและการตัดสินใจของผู้บริหาร</span>
             </h2>
-            <ul className="list-decimal pl-8 text-xs text-slate-700 space-y-1 leading-relaxed">
+            <ul className="list-decimal pl-8 text-xs text-slate-700 space-y-1.5 leading-relaxed">
               <li>
-                <strong>การขยายบริการวิชาการเชิงพาณิชย์:</strong> ผลักดันโครงการ FSS NU POLL และหลักสูตรระยะสั้น/สัมฤทธิบัตรอย่างต่อเนื่องเพื่อสร้างกระแสรายได้ใหม่ (Non-tuition Revenue)
+                <strong>การขยายบริการวิชาการและการจัดการศึกษาตลอดชีวิต:</strong> ผลักดันโครงการบริการวิชาการเชิงรุก (เช่น FSS NU POLL) และหลักสูตรระยะสั้น/สัมฤทธิบัตรเพื่อสร้างกระแสรายได้เสริมควบคู่กับการจัดการศึกษาตามพันธกิจ
               </li>
               <li>
-                <strong>การตลาดรับเข้านิสิตเชิงรุก:</strong> เสริมงบประมาณด้านสื่อดิจิทัลและกิจกรรม Roadshow สำหรับสาขาที่มีผู้สมัครน้อย เพื่อให้บรรลุเป้าหมายการรับนิสิต TCAS 2570
+                <strong>การจัดกิจกรรมและประชาสัมพันธ์รับเข้านิสิตเชิงรุก:</strong> สนับสนุนงบประมาณด้านสื่อดิจิทัลและกิจกรรม Roadshow สำหรับสาขาวิชาเพื่อบรรลุเป้าหมายการรับนิสิต TCAS 2570
               </li>
               <li>
-                <strong>การเร่งรัดการเบิกจ่าย:</strong> กำกับติดตามโครงการขนาดใหญ่ที่ยังไม่มีการขอเบิกจ่ายในไตรมาสที่ ๑-๒ เพื่อป้องกันงบค้างท่อและบริหารจัดการสภาพคล่องอย่างมีประสิทธิภาพ
+                <strong>การเร่งรัดและติดตามการเบิกจ่ายงบประมาณ:</strong> กำกับติดตามโครงการตามแผนปฏิบัติการในไตรมาสที่ 1-2 และไตรมาสที่ 3-4 เพื่อป้องกันงบค้างท่อและบริหารจัดการสภาพคล่องทางการเงินอย่างมีประสิทธิภาพ
               </li>
             </ul>
           </div>
 
           {/* SIGNATURES SECTION */}
-          <div className="mt-12 pt-6 border-t border-slate-300">
+          <div className="signature-section-block mt-10 pt-5 border-t border-slate-300">
             {/* Quick in-paper Edit Prompt (Hidden on Print) */}
-            <div className="flex items-center justify-between mb-8 print:hidden">
+            <div className="flex items-center justify-between mb-6 print:hidden">
               <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-indigo-600" />
-                <span>รายชื่อผู้ลงนามท้ายเอกสาร ({enabledSignatories.length} ท่าน):</span>
+                <span>รายชื่อผู้ลงนามท้ายเอกสาร ({enabledSignatories.length} ท่าน - ตรวจสอบตรงตามระบบ):</span>
               </div>
               <button
                 type="button"
@@ -607,7 +698,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 className="inline-flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded-md hover:bg-indigo-50 border border-indigo-200 transition cursor-pointer"
               >
                 <Edit3 className="w-3 h-3" />
-                <span>คลิกเพื่อแก้ไขชื่อ/ตำแหน่งผู้ลงนาม</span>
+                <span>แก้ไขหรือเลือกผู้ลงนาม</span>
               </button>
             </div>
 
@@ -625,7 +716,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 <div key={sig.id} className="space-y-1 group">
                   {/* Role Label */}
                   {sig.roleLabel && (
-                    <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-2">
+                    <div className="text-[10px] text-slate-600 font-semibold uppercase tracking-wider mb-2">
                       {sig.roleLabel}
                     </div>
                   )}

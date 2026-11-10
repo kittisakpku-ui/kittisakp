@@ -708,8 +708,8 @@ export default function App() {
       <ExecutiveReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
-        projects={visibleProjects}
-        transfers={visibleTransfers}
+        projects={isPrivileged ? projects : visibleProjects}
+        transfers={isPrivileged ? transfers : visibleTransfers}
         config={config}
         members={members}
       />

@@ -24,7 +24,7 @@ export const ProjectSummaryPrintModal: React.FC<ProjectSummaryPrintModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div className="project-summary-print-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden my-4 sm:my-8 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
         {/* Modal Controls (Not printed) */}
         <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0 print:hidden">
@@ -50,7 +50,7 @@ export const ProjectSummaryPrintModal: React.FC<ProjectSummaryPrintModalProps> =
         </div>
 
         {/* Printable Paper Document Container */}
-        <div className="p-8 sm:p-12 overflow-y-auto flex-1 font-['Sarabun',sans-serif] text-slate-900 print:p-0 print:overflow-visible">
+        <div className="project-summary-paper-document p-8 sm:p-12 overflow-y-auto flex-1 font-['Sarabun',sans-serif] text-slate-900 print:p-0 print:overflow-visible">
           {/* Official Memorandum Header */}
           <div className="text-center pb-6 border-b-2 border-slate-900 space-y-1">
             <div className="text-lg font-bold tracking-tight text-slate-900 uppercase">
