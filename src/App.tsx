@@ -85,6 +85,21 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Real-time Firestore sync for member accounts across all devices and browsers
+  useEffect(() => {
+    StorageService.fetchRemoteMembers().then(remoteMembers => {
+      if (remoteMembers && remoteMembers.length > 0) {
+        setMembers(remoteMembers);
+      }
+    });
+
+    const unsub = StorageService.subscribeToMembers((updatedMembers) => {
+      setMembers(updatedMembers);
+    });
+
+    return () => unsub();
+  }, []);
+
   // RBAC Permission Model:
   // สมาชิกท่านอื่นๆ นอกจาก เจ้าหน้าที่งานแผน, ผู้บริหาร, และ super admin
   // สามารถมองเห็นและจัดการเฉพาะส่วนที่ตนเองรับผิดชอบเท่านั้น
@@ -668,6 +683,7 @@ export default function App() {
         onLogin={handleLoginUser}
         onRegister={handleRegisterUser}
         onLogout={handleLogout}
+        onSyncMembers={(updated) => setMembers(updated)}
         initialMode={authMode}
       />
 

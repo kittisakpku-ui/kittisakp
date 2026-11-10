@@ -17,6 +17,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { AppMember, UserRole, FACULTY_DEPARTMENTS, FacultyDepartment } from '../types/budget';
+import { StorageService } from '../services/storageService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ interface AuthModalProps {
   onLogin: (member: AppMember) => void;
   onRegister: (newMember: AppMember) => void;
   onLogout?: () => void;
+  onSyncMembers?: (updatedMembers: AppMember[]) => void;
   initialMode?: 'login' | 'register';
 }
 
@@ -37,6 +39,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLogin,
   onRegister,
   onLogout,
+  onSyncMembers,
   initialMode = 'login',
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
@@ -46,6 +49,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Register Form States
   const [regUsername, setRegUsername] = useState('');
@@ -61,8 +65,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Omni-channel member matching: handles full email, email prefix (before @), username, or 'admin'
+  const matchMember = (m: AppMember, targetId: string) => {
+    const cleanTarget = targetId.trim().toLowerCase();
+    const targetPrefix = cleanTarget.includes('@') ? cleanTarget.split('@')[0] : cleanTarget;
+    
+    const mEmail = (m.email || '').toLowerCase().trim();
+    const mEmailPrefix = mEmail.split('@')[0];
+    const mUser = (m.username || '').toLowerCase().trim();
+    const mUserPrefix = mUser.split('@')[0];
+    const mId = (m.id || '').toLowerCase().trim();
+
+    // Super admin shortcuts
+    if (cleanTarget === 'admin' && (m.role === 'admin' || mEmail === 'kittisakpku@gmail.com' || mUser === 'admin')) {
+      return true;
+    }
+
+    return (
+      mEmail === cleanTarget ||
+      mEmailPrefix === cleanTarget ||
+      mUser === cleanTarget ||
+      mUserPrefix === cleanTarget ||
+      mEmail === targetPrefix ||
+      mEmailPrefix === targetPrefix ||
+      mUser === targetPrefix ||
+      mUserPrefix === targetPrefix ||
+      mId === cleanTarget
+    );
+  };
+
   // Handle Login
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
 
@@ -78,20 +111,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    // Check member
-    const found = members.find(
-      m => m.email.toLowerCase() === cleanId || 
-           (m.username && m.username.toLowerCase() === cleanId) ||
-           (cleanId === 'admin' && m.email === 'kittisakpku@gmail.com')
-    );
+    setIsLoggingIn(true);
+
+    // 1. Search current in-memory members list
+    let pool = members;
+    let found = pool.find(m => matchMember(m, cleanId));
+
+    // 2. If not found locally, fetch latest remote members from Firestore cloud (handles multi-device sync)
+    if (!found) {
+      try {
+        const remoteMembers = await StorageService.fetchRemoteMembers();
+        if (remoteMembers && remoteMembers.length > 0) {
+          pool = remoteMembers;
+          found = pool.find(m => matchMember(m, cleanId));
+          if (onSyncMembers) {
+            onSyncMembers(remoteMembers);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not refresh remote members during login check', err);
+      }
+    }
+
+    setIsLoggingIn(false);
 
     if (!found) {
-      setLoginError('ไม่พบบัญชีผู้ใช้งานนี้ในระบบ');
+      setLoginError('ไม่พบบัญชีผู้ใช้งานนี้ในระบบ กรุณาตรวจสอบชื่อผู้ใช้หรืออีเมล (เช่น watcharabonb หรือ watcharabonb@nu.ac.th)');
       return;
     }
 
-    // Verify Password (super admin check or user's custom password)
-    const validPassword = found.password || (found.role === 'admin' ? 'fssnu1932' : '123456');
+    // Verify Password (super admin check or user's custom password, with trimmed whitespace)
+    const validPassword = (found.password || (found.role === 'admin' ? 'fssnu1932' : '123456')).trim();
 
     if (cleanPass !== validPassword) {
       setLoginError('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
@@ -337,6 +387,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onChange={(e) => setLoginIdentifier(e.target.value)}
                     className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#007AFF] transition"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    * สามารถระบุเป็น Username หรือ Email (เช่น watcharabonb หรือ watcharabonb@nu.ac.th)
+                  </p>
                 </div>
               </div>
 
@@ -366,10 +419,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066d6] active:scale-[0.98] text-white text-xs font-bold shadow-[0_2px_12px_rgba(0,122,255,0.3)] transition cursor-pointer flex items-center justify-center gap-2 mt-2"
+                disabled={isLoggingIn}
+                className="w-full py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066d6] active:scale-[0.98] disabled:opacity-60 text-white text-xs font-bold shadow-[0_2px_12px_rgba(0,122,255,0.3)] transition cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
                 <LogIn className="w-4 h-4" />
-                <span>เข้าสู่ระบบ</span>
+                <span>{isLoggingIn ? 'กำลังตรวจสอบข้อมูล...' : 'เข้าสู่ระบบ'}</span>
               </button>
 
               <div className="text-center pt-2">

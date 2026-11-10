@@ -22,7 +22,10 @@ import {
   Filter,
   Save,
   CheckSquare,
-  Square
+  Square,
+  Copy,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { 
   AppMember, 
@@ -98,6 +101,8 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [editCanManageUsers, setEditCanManageUsers] = useState(false);
   const [editCanConfigureSystem, setEditCanConfigureSystem] = useState(false);
   const [editNotice, setEditNotice] = useState('');
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [copiedNotice, setCopiedNotice] = useState(false);
 
   if (!isOpen) return null;
 
@@ -140,11 +145,14 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       return;
     }
 
+    const cleanUsername = (addUsername.trim() || addEmail.split('@')[0]).replace(/@.*$/, '');
+    const cleanPassword = (addPassword.trim() || '123456');
+
     onAddMember({
       displayName: addDisplayName.trim(),
-      username: addUsername.trim() || addEmail.split('@')[0],
+      username: cleanUsername,
       email: addEmail.trim(),
-      password: addPassword.trim() || '123456',
+      password: cleanPassword,
       department: addDepartment,
       role: addRole,
       status: 'approved', // Members manually added by admin are approved immediately
@@ -169,9 +177,10 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const handleStartEdit = (member: AppMember) => {
     setEditingMember(member);
     setEditDisplayName(member.displayName);
-    setEditUsername(member.username || member.email.split('@')[0]);
+    const cleanUser = (member.username || member.email.split('@')[0]).replace(/@.*$/, '');
+    setEditUsername(cleanUser);
     setEditEmail(member.email);
-    setEditPassword('');
+    setEditPassword(member.password || '');
     setEditDepartment(member.department);
     setEditRole(member.role);
     setEditStatus(member.status || 'approved');
@@ -191,11 +200,12 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     if (!editingMember) return;
 
     const isTargetSuperAdmin = editingMember.email === 'kittisakpku@gmail.com' || editingMember.username === 'admin';
+    const cleanUsername = (editUsername.trim() || editEmail.split('@')[0]).replace(/@.*$/, '');
 
     const updated: AppMember = {
       ...editingMember,
       displayName: editDisplayName.trim() || editingMember.displayName,
-      username: editUsername.trim() || editingMember.username,
+      username: isTargetSuperAdmin ? 'admin' : cleanUsername,
       email: editEmail.trim() || editingMember.email,
       department: editDepartment,
       role: isTargetSuperAdmin ? 'admin' : editRole,
@@ -842,16 +852,45 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                      <span>รีเซ็ตรหัสผ่าน</span>
-                      <span className="text-[10px] text-slate-400">เว้นว่างหากไม่เปลี่ยน</span>
+                      <span>รหัสผ่านเข้าใช้งาน (Password)</span>
+                      {editingMember?.email !== 'kittisakpku@gmail.com' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const creds = `ข้อมูลเข้าสู่ระบบ ระบบติดตามงบประมาณ คณะสังคมศาสตร์ ม.นเรศวร:\n- ชื่อผู้ใช้ (Username): ${editUsername}\n- หรือระบุอีเมล: ${editEmail}\n- รหัสผ่าน (Password): ${editPassword.trim() || editingMember?.password || '123456'}`;
+                            navigator.clipboard.writeText(creds);
+                            setCopiedNotice(true);
+                            setTimeout(() => setCopiedNotice(false), 2500);
+                          }}
+                          className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>{copiedNotice ? '✓ คัดลอกแล้ว!' : 'คัดลอกส่งผู้ใช้'}</span>
+                        </button>
+                      )}
                     </label>
-                    <input
-                      type="password"
-                      placeholder="กำหนดรหัสผ่านใหม่"
-                      value={editPassword}
-                      onChange={(e) => setEditPassword(e.target.value)}
-                      className="w-full text-xs p-2 rounded-xl border border-slate-300 bg-white"
-                    />
+                    {editingMember?.email === 'kittisakpku@gmail.com' ? (
+                      <div className="p-2 rounded-xl bg-slate-100 text-slate-500 text-xs italic">
+                        •••••••• (รหัสผ่าน Super Admin ถูกปกปิดเพื่อความปลอดภัย)
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <input
+                          type={showEditPassword ? 'text' : 'password'}
+                          placeholder="กำหนดรหัสผ่าน"
+                          value={editPassword}
+                          onChange={(e) => setEditPassword(e.target.value)}
+                          className="w-full text-xs p-2 pr-8 rounded-xl border border-slate-300 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEditPassword(!showEditPassword)}
+                          className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          {showEditPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

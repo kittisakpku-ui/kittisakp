@@ -1,7 +1,7 @@
 import { BudgetProject, BudgetTransferRecord, AppMember, SystemConfig, ProjectSummaryRecord } from '../types/budget';
 import { INITIAL_PROJECTS, INITIAL_TRANSFERS, INITIAL_MEMBERS, INITIAL_CONFIG, INITIAL_PROJECT_SUMMARIES } from '../data/initialBudgetData';
 import { db, handleFirestoreError, OperationType } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 
 const LOCAL_STORAGE_KEY_PROJECTS = 'socsci_budget_projects_2570';
 const LOCAL_STORAGE_KEY_TRANSFERS = 'socsci_budget_transfers_2570';
@@ -54,49 +54,66 @@ export class StorageService {
     }
   }
 
+  static sanitizeAndNormalizeMembers(rawList: AppMember[]): AppMember[] {
+    const list: AppMember[] = JSON.parse(JSON.stringify(rawList || []));
+    let updated = false;
+
+    // Ensure super admin has password fssnu1932, approved status, and faculty-wide access
+    const adminIndex = list.findIndex(m => m.email === 'kittisakpku@gmail.com');
+    if (adminIndex >= 0) {
+      if (
+        list[adminIndex].password !== 'fssnu1932' || 
+        !list[adminIndex].username || 
+        list[adminIndex].status !== 'approved' ||
+        list[adminIndex].dataAccessScope !== 'all'
+      ) {
+        list[adminIndex].password = 'fssnu1932';
+        list[adminIndex].username = 'admin';
+        list[adminIndex].status = 'approved';
+        list[adminIndex].dataAccessScope = 'all';
+        updated = true;
+      }
+    } else {
+      // Re-insert super admin
+      list.unshift({ ...INITIAL_MEMBERS[0], status: 'approved', dataAccessScope: 'all' });
+      updated = true;
+    }
+
+    // Ensure legacy/created members have proper defaults
+    list.forEach(m => {
+      if (!m.status) {
+        m.status = 'approved';
+        updated = true;
+      }
+      if (!m.dataAccessScope) {
+        m.dataAccessScope = (m.role === 'admin' || m.role === 'executive' || m.role === 'finance_officer') ? 'all' : 'department_only';
+        updated = true;
+      }
+      // Ensure username exists and is clean (strip @domain for clean username)
+      if (!m.username || (m.username.includes('@') && m.username.toLowerCase() !== 'admin')) {
+        m.username = (m.username ? m.username.split('@')[0] : (m.email ? m.email.split('@')[0] : 'user'));
+        updated = true;
+      }
+      // Ensure password is trimmed if present
+      if (m.password) {
+        const trimmed = m.password.trim();
+        if (trimmed !== m.password) {
+          m.password = trimmed;
+          updated = true;
+        }
+      }
+    });
+
+    return list;
+  }
+
   static loadMembers(): AppMember[] {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY_MEMBERS);
       if (stored) {
-        const list: AppMember[] = JSON.parse(stored);
-        let updated = false;
-
-        // Ensure super admin has password fssnu1932, approved status, and faculty-wide access
-        const adminIndex = list.findIndex(m => m.email === 'kittisakpku@gmail.com');
-        if (adminIndex >= 0) {
-          if (
-            list[adminIndex].password !== 'fssnu1932' || 
-            !list[adminIndex].username || 
-            list[adminIndex].status !== 'approved' ||
-            list[adminIndex].dataAccessScope !== 'all'
-          ) {
-            list[adminIndex].password = 'fssnu1932';
-            list[adminIndex].username = 'admin';
-            list[adminIndex].status = 'approved';
-            list[adminIndex].dataAccessScope = 'all';
-            updated = true;
-          }
-        } else {
-          // Re-insert super admin
-          list.unshift({ ...INITIAL_MEMBERS[0], status: 'approved', dataAccessScope: 'all' });
-          updated = true;
-        }
-
-        // Ensure legacy members without status default to 'approved'
-        list.forEach(m => {
-          if (!m.status) {
-            m.status = 'approved';
-            updated = true;
-          }
-          if (!m.dataAccessScope) {
-            m.dataAccessScope = (m.role === 'admin' || m.role === 'executive' || m.role === 'finance_officer') ? 'all' : 'department_only';
-            updated = true;
-          }
-        });
-
-        if (updated) {
-          localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(list));
-        }
+        const parsed = JSON.parse(stored);
+        const list = this.sanitizeAndNormalizeMembers(parsed);
+        localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(list));
         return list;
       }
     } catch (err) {
@@ -105,10 +122,49 @@ export class StorageService {
     return INITIAL_MEMBERS;
   }
 
+  static async fetchRemoteMembers(): Promise<AppMember[] | null> {
+    try {
+      const snap = await getDoc(doc(db, 'settings', 'members_cache'));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data && Array.isArray(data.members) && data.members.length > 0) {
+          const list = this.sanitizeAndNormalizeMembers(data.members);
+          localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(list));
+          return list;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch remote members from Firestore', err);
+    }
+    return null;
+  }
+
+  static subscribeToMembers(callback: (members: AppMember[]) => void): Unsubscribe {
+    try {
+      const unsub = onSnapshot(doc(db, 'settings', 'members_cache'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && Array.isArray(data.members) && data.members.length > 0) {
+            const list = this.sanitizeAndNormalizeMembers(data.members);
+            localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(list));
+            callback(list);
+          }
+        }
+      }, (err) => {
+        console.warn('Firestore members subscription notice:', err);
+      });
+      return unsub;
+    } catch (err) {
+      console.warn('Could not establish members snapshot subscription', err);
+      return () => {};
+    }
+  }
+
   static saveMembers(members: AppMember[]) {
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(members));
-      this.syncMembersToFirestore(members).catch(() => {});
+      const sanitized = this.sanitizeAndNormalizeMembers(members);
+      localStorage.setItem(LOCAL_STORAGE_KEY_MEMBERS, JSON.stringify(sanitized));
+      this.syncMembersToFirestore(sanitized).catch(() => {});
     } catch (err) {
       console.error('Failed to save members to storage', err);
     }
